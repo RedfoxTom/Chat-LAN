@@ -31,7 +31,7 @@ import javax.net.ssl.X509TrustManager;
 /**
  * Dünner Client für OpenAI-kompatible Chat-APIs:
  *  - Open WebUI  (Pfade unter /api,  Login über /api/v1/auths/signin)
- *  - direkt      (Pfade unter /v1,  API-Key oder keyless, z. B. Strata/LM Studio)
+ *  - direkt      (Pfade unter /v1,  API-Key oder keyless, z. B. LM Studio)
  *
  * TLS: System-CA plus im App-Asset liegt LAN-CA (assets/ca.crt) -> HTTPS im LAN ohne
  * Zertifikatswarnung. Optional "ungeprüft" für VPN-Adressen ohne passenden SAN.

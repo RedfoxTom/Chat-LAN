@@ -11,7 +11,7 @@ Kein React/Capacitor, kein Gradle: eine kleine native Android-App in Java, gebau
 | Bereich | Wie |
 |---|---|
 | Chat | Open WebUI (`/api/chat/completions`) oder direkt (`/v1/chat/completions`), Streaming, Systemprompt, Temperatur, Historie in SQLite |
-| Bilder | ComfyUI über Open WebUI (`strata-comfy-bilder`), Größen 832 / 1024 / 1280, Antwortbilder klickbar |
+| Bilder | ComfyUI über Open WebUI (Workflow und Bild-Modell in den Einstellungen), Größen 832 / 1024 / 1280, Antwortbilder klickbar |
 | Vision | Bild anhängen, Modell antwortet darauf |
 | Diktat | `POST /v1/audio/transcriptions` (Whisper, `language=de`) oder die Telefon-Spracheingabe als Fallback |
 | Sprach-Unterhaltung | Aufnahme → Verstehen → Antworten → Vorlesen, Gesprächsmodus mit Stufenanzeige (`VoiceFlow.java`) |
