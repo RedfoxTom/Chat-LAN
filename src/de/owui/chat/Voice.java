@@ -36,7 +36,7 @@ public class Voice {
     public void play(byte[] audio, final Done cb) {
         stop();
         if (audio == null || audio.length == 0) {
-            if (cb != null) cb.onDone(false, "Der Server hat kein Audio geliefert");
+            if (cb != null) cb.onDone(false, Txt.t(R.string.err_no_audio, "The server returned no audio"));
             return;
         }
         final int mySession = ++session;
@@ -49,7 +49,7 @@ public class Voice {
                 out.close();
             }
         } catch (IOException e) {
-            if (cb != null) cb.onDone(false, "Audio konnte nicht gespeichert werden: " + e.getMessage());
+            if (cb != null) cb.onDone(false, Txt.t(R.string.err_audio_save, "Audio could not be saved: %1$s", e.getMessage()));
             return;
         }
 

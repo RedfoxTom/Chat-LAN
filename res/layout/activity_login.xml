@@ -14,14 +14,14 @@
         <ImageView
             android:layout_width="52dp"
             android:layout_height="52dp"
-            android:contentDescription="Logo"
+            android:contentDescription="@string/logo"
             android:src="@drawable/ic_launcher_fg" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="Chat LAN"
+            android:text="@string/app_name"
             android:textColor="@color/text_primary"
             android:textSize="24sp"
             android:textStyle="bold" />
@@ -30,7 +30,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Open WebUI oder OpenAI-kompatible API – im WLAN, LAN oder VPN"
+            android:text="@string/login_tagline"
             android:textColor="@color/text_secondary"
             android:textSize="14sp" />
 
@@ -38,7 +38,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="22dp"
-            android:text="SERVER"
+            android:text="@string/login_server"
             android:textColor="@color/text_faint"
             android:textSize="12sp" />
 
@@ -48,7 +48,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:hint="https://192.168.1.20:3443"
+            android:hint="@string/example_url"
             android:inputType="textUri" />
 
         <TextView
@@ -58,7 +58,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:background="@drawable/bg_field"
-            android:text="192.168.1.20:3443   Open WebUI (HTTPS)"
+            android:text="@string/login_preset_https"
             android:textColor="@color/text_primary"
             android:textSize="13sp" />
 
@@ -69,7 +69,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:background="@drawable/bg_field"
-            android:text="192.168.1.20:3000   Open WebUI (HTTP)"
+            android:text="@string/login_preset_http"
             android:textColor="@color/text_primary"
             android:textSize="13sp" />
 
@@ -80,7 +80,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:background="@drawable/bg_field"
-            android:text="192.168.1.20:8080   Modell-Server direkt"
+            android:text="@string/login_preset_direct"
             android:textColor="@color/text_primary"
             android:textSize="13sp" />
 
@@ -88,7 +88,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
-            android:text="ZUGANG"
+            android:text="@string/login_access"
             android:textColor="@color/text_faint"
             android:textSize="12sp" />
 
@@ -104,14 +104,14 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:checked="true"
-                android:text="Open-WebUI-Login" />
+                android:text="@string/login_mode_webui" />
 
             <RadioButton
                 android:id="@+id/modeKey"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="16dp"
-                android:text="API-Key / direkt" />
+                android:text="@string/login_mode_apikey" />
         </RadioGroup>
 
         <LinearLayout
@@ -125,7 +125,7 @@
                 style="@style/FieldPlain"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="E-Mail"
+                android:hint="@string/login_email_hint"
                 android:inputType="textEmailAddress" />
 
             <EditText
@@ -134,7 +134,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:hint="Passwort"
+                android:hint="@string/login_password_hint"
                 android:imeOptions="actionDone"
                 android:inputType="textPassword" />
         </LinearLayout>
@@ -151,14 +151,14 @@
                 style="@style/FieldPlain"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="API-Key (leer lassen, wenn keiner nötig ist)"
+                android:hint="@string/login_apikey_hint"
                 android:inputType="textNoSuggestions" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Direkt-Modus spricht /v1/models und /v1/chat/completions an – zum Beispiel der Modell-Server auf Port 8080."
+                android:text="@string/login_direct_note"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
         </LinearLayout>
@@ -168,7 +168,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="TLS-Zertifikat ungeprüft akzeptieren (nur in vertrauenswürdigen Netzen)"
+            android:text="@string/login_trust_tls"
             android:textColor="@color/text_secondary"
             android:textSize="13sp" />
 
@@ -177,7 +177,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
-            android:text="Verbinden" />
+            android:text="@string/login_connect" />
 
         <TextView
             android:id="@+id/status"
@@ -191,7 +191,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
-            android:text="Chat LAN 1.0 – gebaut für dieses Netzwerk"
+            android:text="@string/login_footnote"
             android:textColor="@color/text_faint"
             android:textSize="12sp" />
     </LinearLayout>

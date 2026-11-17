@@ -102,9 +102,10 @@ public class MainActivity extends Activity {
     private static final int VOICE_MAX_CHARS = 1500;
 
     private static final String VOICE_SYSTEM_PROMPT =
-            "Du bist in einem gesprochenen Gespraech (Knopfdruck, Sprechen, Antwort wird vorgelesen). "
-                    + "Antworte frei gesproken in ein bis zwei kurzen Saetzen, maximal 60 Woerter, "
-                    + "ohne Aufzaehlungen, ohne Markdown, ohne Links, ohne Code, ohne Vorrede.";
+            "You are in a spoken conversation (button press, speaking, the answer is read aloud). "
+                    + "Answer as free speech in one or two short sentences, at most 60 words, "
+                    + "no lists, no markdown, no links, no code, no preamble. "
+                    + "Answer in the language the user is speaking.";
 
     private boolean generating;
     private boolean followScroll = true;
@@ -117,6 +118,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle saved) {
         super.onCreate(saved);
+        Txt.init(this);
         cfg = new Config(this);
         if (!cfg.hasAccess() || cfg.baseUrl.isEmpty()) {
             Intent i = new Intent(this, LoginActivity.class);
@@ -312,7 +314,7 @@ public class MainActivity extends Activity {
     /** Kleine Quellzeilen unter einer Antwort: Titel plus klickbare URL. */
     private TextView sourcesView(Msg m) {
         StringBuilder b = new StringBuilder();
-        b.append("Im Netz gefunden");
+        b.append(getString(R.string.web_found));
         for (String line : m.sources) {
             b.append('\n').append(Search.sourceTitle(line));
             String url = Search.sourceUrl(line);
@@ -340,7 +342,7 @@ public class MainActivity extends Activity {
     private void send() {
         if (generating) return;
         if (flow.isListening() && recorder != null && recorder.isRunning()) {
-            toast("Sprachaufnahme läuft – erst beenden (Unterhaltungs-Knopf).");
+            toast(getString(R.string.toast_rec_running));
             return;
         }
         String text = input.getText().toString().trim();
@@ -348,12 +350,12 @@ public class MainActivity extends Activity {
 
         String model = selectedModelId();
         if (model == null || model.isEmpty()) {
-            toast("Kein Modell ausgewählt.");
+            toast(getString(R.string.toast_no_model));
             refreshModels();
             return;
         }
         if (pendingImage != null && modelLooksBlind(model)) {
-            toast("Das gewählte Modell sieht keine Bilder – anderes Modell wählen oder Bild entfernen.");
+            toast(getString(R.string.toast_model_no_vision));
             return;
         }
 
@@ -406,7 +408,7 @@ public class MainActivity extends Activity {
         if (picked.imageGen) {
             if (flow.sessionOn() || (voice != null && voice.isSpeaking())) {
                 abortVoice();
-                toast("Bild-Modus: Sprach-Unterhaltung aus – Senden erzeugt ein Bild.");
+                toast(getString(R.string.toast_image_mode_chat_off));
             }
         }
         updateQualityChip();
@@ -418,7 +420,7 @@ public class MainActivity extends Activity {
     /** Im Bild-Modus steht im Eingabefeld, was ComfyUI braucht. */
     private void updateInputHint() {
         if (input == null) return;
-        input.setHint(imageMode() ? "Bild beschreiben…" : getString(R.string.ask));
+        input.setHint(imageMode() ? getString(R.string.hint_image_prompt) : getString(R.string.ask));
     }
 
     /**
@@ -487,9 +489,9 @@ public class MainActivity extends Activity {
                         @Override
                         public void run() {
                             if (found > 0 && streamingView != null) {
-                                streamingView.setText("Im Netz gesucht: " + found + " Seiten gelesen …");
+                                streamingView.setText(getString(R.string.web_search_reading, found));
                             } else if (found == 0) {
-                                toast("Websuche: nichts gefunden");
+                                toast(getString(R.string.toast_search_nothing));
                             }
                         }
                     });
@@ -509,7 +511,7 @@ public class MainActivity extends Activity {
                                     if (streamingView == null) return;
                                     streamingView.setTextColor(BUBBLE_TEXT);
                                     if (full.indexOf("data:image") >= 0) {
-                                        streamingView.setText("Bild wird geladen …");
+                                        streamingView.setText(getString(R.string.status_image_loading));
                                     } else {
                                         streamingView.setText(full.isEmpty() ? "…" : full);
                                     }
@@ -572,7 +574,7 @@ public class MainActivity extends Activity {
             if (asst.text.trim().isEmpty() && !asst.hasImage()) {
                 history.remove(asst);
                 rebuildChatList();
-                toast("Der Server hat leer geantwortet.");
+                toast(getString(R.string.toast_empty_reply));
             } else {
                 if (hits != null && !hits.isEmpty()) {
                     asst.addSources(Search.sourceList(Search.sourceLines(hits)));
@@ -610,7 +612,7 @@ public class MainActivity extends Activity {
         boolean voiceRound = flow.isThinking();
         if (Router.speaksOnAnswer(voiceRound, pictureAnswer, hasText)) {
             flow.answerReady(true);                 // Stufe: spreche
-            logVoice("Antwort da, wird vorgelesen");
+            logVoice(getString(R.string.log_answer_read));
             speak(asst.text, true);
         } else if (voiceRound) {
             flow.answerReady(false);                // ohne Stimme endet die Unterhaltung
@@ -618,12 +620,12 @@ public class MainActivity extends Activity {
                 endVoiceLoop(null);                 // Fehler steht schon in der Blase
             } else {
                 endVoiceLoop(pictureAnswer
-                        ? "Bild-Antworten werden nicht vorgelesen"
-                        : "Ich habe nichts zum Vorlesen gefunden");
+                        ? getString(R.string.tts_no_image)
+                        : getString(R.string.tts_nothing));
             }
         }
         // Diktat und getippte Fragen bleiben stumm: vorgelesen wird nur in der
-        // Sprach-Unterhaltung. Einzelne Antworten gehen ueber das Menue "Vorlesen".
+        // Sprach-Unterhaltung. Einzelne Antworten gehen ueber das Menue getString(R.string.msg_read_aloud).
 
         scrollToEnd(false);
     }
@@ -650,7 +652,7 @@ public class MainActivity extends Activity {
         Msg user = history.get(lastUser);
         String model = user.model != null && !user.model.isEmpty() ? user.model : selectedModelId();
         if (model == null || model.isEmpty()) {
-            toast("Kein Modell ausgewählt.");
+            toast(getString(R.string.toast_no_model));
             return;
         }
         startAssistantOrImage(model, user);
@@ -665,19 +667,19 @@ public class MainActivity extends Activity {
     private void messageMenu(final Msg m) {
         final boolean assistant = "assistant".equals(m.role);
         String[] items = assistant
-                ? new String[]{"Antwort kopieren", "Vorlesen", "Neu generieren", "Nachricht löschen"}
-                : new String[]{"Frage kopieren", "Nachricht löschen"};
+                ? new String[]{getString(R.string.msg_copy_answer), getString(R.string.msg_read_aloud), getString(R.string.msg_regenerate), getString(R.string.msg_delete)}
+                : new String[]{getString(R.string.msg_copy_question), getString(R.string.msg_delete)};
         new AlertDialog.Builder(this)
-                .setTitle(assistant ? "Antwort" : "Frage")
+                .setTitle(assistant ? getString(R.string.label_answer) : getString(R.string.label_question))
                 .setItems(items, (d, which) -> {
                     String label = items[which];
                     if (label.endsWith("kopieren")) {
                         Util.copyText(this, m.text);
                         toast("Kopiert");
-                    } else if (label.equals("Vorlesen")) {
-                        if (m.text == null || m.text.trim().isEmpty()) toast("Diese Nachricht hat keinen Text");
+                    } else if (label.equals(getString(R.string.msg_read_aloud))) {
+                        if (m.text == null || m.text.trim().isEmpty()) toast(getString(R.string.toast_no_text));
                         else speak(m.text, false);
-                    } else if (label.equals("Neu generieren")) {
+                    } else if (label.equals(getString(R.string.msg_regenerate))) {
                         regenerate();
                     } else {
                         if (m.dbId > 0) db.deleteMessage(m.dbId);
@@ -695,9 +697,9 @@ public class MainActivity extends Activity {
         i.setType("image/*");
         i.addCategory(Intent.CATEGORY_OPENABLE);
         try {
-            startActivityForResult(Intent.createChooser(i, "Bild anhängen"), REQ_IMAGE);
+            startActivityForResult(Intent.createChooser(i, getString(R.string.attach_image)), REQ_IMAGE);
         } catch (Exception e) {
-            toast("Kein Bild-Auswahl gefunden.");
+            toast(getString(R.string.toast_no_picker));
         }
     }
 
@@ -719,7 +721,7 @@ public class MainActivity extends Activity {
             public void run() {
                 try {
                     InputStream in = getContentResolver().openInputStream(uri);
-                    if (in == null) throw new IllegalStateException("Bild konnte nicht gelesen werden.");
+                    if (in == null) throw new IllegalStateException(getString(R.string.toast_image_unreadable));
                     Bitmap bmp;
                     try {
                         bmp = Util.decodeScaled(in, 1152);
@@ -741,7 +743,7 @@ public class MainActivity extends Activity {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            toast("Bild: " + e.getMessage());
+                            toast(getString(R.string.toast_image_error, e.getMessage()));
                         }
                     });
                 }
@@ -758,7 +760,7 @@ public class MainActivity extends Activity {
         } finally {
             if (c != null) c.close();
         }
-        return "Bild";
+        return getString(R.string.img_label);
     }
 
     private void showAttachBar() {
@@ -791,7 +793,7 @@ public class MainActivity extends Activity {
         tv.setTextSize(16);
         tv.setTextColor(Util.color(0xFF9A9A92));
         tv.setLineSpacing(0, 1.25f);
-        tv.setText("Bild wird erzeugt …  (ComfyUI " + cfg.imageSize + ", einige Sekunden)");
+        tv.setText(getString(R.string.status_image_generating, cfg.imageSize));
         row.addView(tv);
         chatList.addView(row);
 
@@ -865,7 +867,7 @@ public class MainActivity extends Activity {
     private void imageViewer(Msg m) {
         Bitmap bmp = decodeScaledBytes(m.images.get(0), 1400);
         if (bmp == null) {
-            toast("Bild konnte nicht angezeigt werden.");
+            toast(getString(R.string.toast_image_show));
             return;
         }
         ImageView iv = new ImageView(this);
@@ -874,7 +876,7 @@ public class MainActivity extends Activity {
         iv.setScaleType(ImageView.ScaleType.FIT_CENTER);
         int pad = Util.dp(this, 10);
         iv.setPadding(pad, pad, pad, pad);
-        new AlertDialog.Builder(this).setView(iv).setPositiveButton("Schließen", null).show();
+        new AlertDialog.Builder(this).setView(iv).setPositiveButton(getString(R.string.btn_close), null).show();
     }
 
     /* ------------------------------------------------ Diktat */
@@ -882,7 +884,7 @@ public class MainActivity extends Activity {
     private void toggleMic() {
         if (transcribing) return;
         if (flow.sessionOn() || (voice != null && voice.isSpeaking())) {
-            toast("Unterhaltung läuft – der Knopf daneben beendet sie.");
+            toast(getString(R.string.toast_conv_running));
             return;
         }
         if (recorder != null && recorder.isRunning()) {
@@ -911,19 +913,19 @@ public class MainActivity extends Activity {
         recorder = r;
         dictBar.setVisibility(View.VISIBLE);
         btnMic.setColorFilter(Util.color(0xFFE5484D));
-        btnMic.setContentDescription("Aufnahme beenden");
-        dictStatus.setText("● Aufnahme");
+        btnMic.setContentDescription(getString(R.string.desc_stop_rec));
+        dictStatus.setText(getString(R.string.rec_status));
         dictTicker = new Runnable() {
             @Override
             public void run() {
                 if (recorder == null || !recorder.isRunning()) return;
                 int sec = recorder.seconds();
                 int bars = Math.min(8, recorder.level() / 3000);
-                StringBuilder sb = new StringBuilder("● Aufnahme ").append(sec).append(" s   ");
+                StringBuilder sb = new StringBuilder(getString(R.string.rec_status_secs, sec));
                 for (int i = 0; i < 8; i++) sb.append(i < bars ? "▁▂▃▄▅▆▇█".charAt(i) : '·');
                 dictStatus.setText(sb.toString());
                 if (sec >= Recorder.MAX_SECONDS) {
-                    toast("Aufnahme beendet (Zeitlimit)");
+                    toast(getString(R.string.rec_time_limit));
                     stopDictation(false);
                     return;
                 }
@@ -953,12 +955,12 @@ public class MainActivity extends Activity {
         }
         if (wav == null) {
             dictBar.setVisibility(View.GONE);
-            toast("Zu kurz für eine Erkennung");
+            toast(getString(R.string.rec_too_short));
             return;
         }
         transcribing = true;
         dictBar.setVisibility(View.VISIBLE);
-        dictStatus.setText("Wird transkribiert …  (Whisper im LAN)");
+        dictStatus.setText(getString(R.string.status_transcribing));
         final byte[] audio = wav;
         worker.execute(new Runnable() {
             @Override
@@ -985,7 +987,7 @@ public class MainActivity extends Activity {
                         transcribing = false;
                         dictBar.setVisibility(View.GONE);
                         if (got.isEmpty()) {
-                            toast("Kein Text erkannt");
+                            toast(getString(R.string.rec_no_text));
                             return;
                         }
                         appendToInput(got);
@@ -1015,7 +1017,7 @@ public class MainActivity extends Activity {
                 startDictation();
             }
         } else {
-            toast("Mikrofon bleibt gesperrt – Diktat geht nur mit Erlaubnis");
+            toast(getString(R.string.mic_blocked));
         }
     }
 
@@ -1029,7 +1031,7 @@ public class MainActivity extends Activity {
             i.putExtra(RecognizerIntent.EXTRA_PROMPT, "Sprechen Sie …");
             startActivityForResult(i, REQ_SPEECH);
         } catch (Exception e) {
-            toast("Dieses Telefon hat keine eigene Spracheingabe – Diktat geht im Open-WebUI-Modus.");
+            toast(getString(R.string.mic_no_input));
         }
     }
 
@@ -1047,7 +1049,7 @@ public class MainActivity extends Activity {
                 if (flow.continueAfterSpeech(true, cfg.voiceLoop)) startVoiceTurn();
                 else endVoiceLoop("Unterhaltung beendet");
             } else {
-                toast("Vorlesen unterbrochen");            // einzelne Nachricht, keine Unterhaltung
+                toast(getString(R.string.tts_interrupted));            // einzelne Nachricht, keine Unterhaltung
             }
             return;
         }
@@ -1063,13 +1065,13 @@ public class MainActivity extends Activity {
                 break;                                      // PRESS_LISTEN: zuhoeren
         }
         if (transcribing || (recorder != null && recorder.isRunning())) {
-            toast("Diktat läuft noch – erst beenden (Mikrofon-Knopf).");
+            toast(getString(R.string.toast_dict_running));
             return;
         }
         if (!Router.voiceChatAllowed(Config.MODE_OWUI.equals(cfg.mode), imageMode())) {
             toast(imageMode()
-                    ? "Bild-Modus: kein Sprach-Chat – Prompt senden erzeugt ein Bild."
-                    : "Sprach-Unterhaltung braucht Open WebUI – Whisper und Stimme laufen auf dem Server");
+                    ? getString(R.string.toast_image_mode_no_voice)
+                    : getString(R.string.toast_voice_needs_webui));
             return;
         }
         startVoiceTurn();
@@ -1090,7 +1092,7 @@ public class MainActivity extends Activity {
             // Im Bild-Modus gibt es keine Sprach-Unterhaltung: der Prompt geht direkt in ComfyUI.
             btnChat.setVisibility(View.GONE);
             btnChat.setEnabled(false);
-            btnChat.setContentDescription("Sprach-Unterhaltung ist im Bild-Modus ausgeschaltet");
+            btnChat.setContentDescription(getString(R.string.desc_conv_image_off));
             return;
         }
         boolean on = flow.sessionOn();
@@ -1098,30 +1100,30 @@ public class MainActivity extends Activity {
         btnChat.setEnabled(true);
         btnChat.setColorFilter(Util.color(on ? 0xFF10A37F : 0xFF9A9AA8));
         btnChat.setContentDescription(on
-                ? "Sprach-Unterhaltung ist an – reden, nochmal drücken beendet sie"
-                : "Sprach-Unterhaltung: reden und die Antwort hören");
+                ? getString(R.string.desc_conv_on)
+                : getString(R.string.desc_conv_off));
     }
 
     /** Aufnahme starten; endet von selbst, wenn die Aussage fertig ist. */
     private void startVoiceTurn() {
         if (flow.isListening()) return;                     // diese Runde ist schon offen
         if (flow.roundActive()) {
-            toast("Die vorige Runde läuft noch – einen Moment warten.");
+            toast(getString(R.string.toast_prev_round));
             return;
         }
         if (generating) {
-            toast("Die vorige Antwort läuft noch – einen Moment warten.");
+            toast(getString(R.string.toast_prev_answer));
             return;
         }
         if (!Router.voiceChatAllowed(Config.MODE_OWUI.equals(cfg.mode), imageMode())) {
             toast(imageMode()
-                    ? "Bild-Modus: keine Sprachrunde – Prompt senden erzeugt ein Bild."
-                    : "Sprach-Unterhaltung braucht Open WebUI – Whisper und Stimme laufen auf dem Server");
+                    ? getString(R.string.toast_image_mode_no_round)
+                    : getString(R.string.toast_voice_needs_webui));
             return;
         }
         final String model = voiceModelId();
         if (model == null || model.isEmpty()) {
-            toast("Kein Modell ausgewählt.");
+            toast(getString(R.string.toast_no_model));
             refreshModels();
             return;
         }
@@ -1133,7 +1135,7 @@ public class MainActivity extends Activity {
         final boolean opening = !flow.sessionOn();
         boolean started = opening ? flow.openSession() : flow.beginTurn();
         if (!started) {
-            toast("Unterhaltung läuft schon – sprich einfach weiter.");
+            toast(getString(R.string.toast_conv_started));
             return;
         }
         voice.stop();
@@ -1152,12 +1154,12 @@ public class MainActivity extends Activity {
         lastLoudAt = turnOpenedAt;
         firstSpeechAt = 0;
         btnChat.setColorFilter(Util.color(0xFFE5484D));
-        btnChat.setContentDescription("Aufnahme beenden (Knopf drücken)");
+        btnChat.setContentDescription(getString(R.string.desc_conv_stop));
         dictBar.setVisibility(View.VISIBLE);
-        dictStatus.setText("● Sprich jetzt …");
+        dictStatus.setText(getString(R.string.rec_speak_now));
         updateChatButton();
-        logVoice(opening ? "Unterhaltung an, erste Aufnahme" : "nächste Aufnahme");
-        if (opening) toast("Unterhaltung an: sprich, die Antwort wird vorgelesen");
+        logVoice(opening ? getString(R.string.log_conv_first) : getString(R.string.log_conv_next));
+        if (opening) toast(getString(R.string.toast_conv_on));
 
         voiceTicker = new Runnable() {
             @Override
@@ -1177,7 +1179,7 @@ public class MainActivity extends Activity {
                 dictStatus.setText(sb.toString());
 
                 if (sec >= Recorder.MAX_SECONDS) {
-                    toast("Aufnahme beendet (Zeitlimit)");
+                    toast(getString(R.string.rec_time_limit));
                     finishVoiceRecording();
                     return;
                 }
@@ -1210,14 +1212,14 @@ public class MainActivity extends Activity {
         btnChat.setColorFilter(Util.color(0xFF10A37F));
         if (wav == null) {
             abortVoice();
-            toast("Zu kurz für eine Erkennung");
+            toast(getString(R.string.rec_too_short));
             return;
         }
         flow.finishRecording();                             // aufnahme -> verstehe
-        logVoice("Aufnahme geschlossen, Whisper");
+        logVoice(getString(R.string.log_rec_whisper));
         final byte[] audio = wav;
         final String model = voiceModelId();
-        dictStatus.setText("Wird verstanden …  (Whisper im LAN)");
+        dictStatus.setText(getString(R.string.status_understanding));
         worker.execute(new Runnable() {
             @Override
             public void run() {
@@ -1262,7 +1264,7 @@ public class MainActivity extends Activity {
         scrollToEnd(true);
         flow.transcriptReady();                             // verstehe -> denke
         logVoice("verstanden: " + text);
-        dictStatus.setText("Ich denke …");
+        dictStatus.setText(getString(R.string.status_thinking));
         startAssistant(model, user);
     }
 
@@ -1272,25 +1274,25 @@ public class MainActivity extends Activity {
      */
     private void speak(final String text, final boolean voiceRound) {
         if (!voiceRound && flow.roundActive()) {
-            /* Eine einzelne Hoerprobe ("Vorlesen", Stimm-Auswahl) darf eine laufende
+            /* Eine einzelne Hoerprobe (getString(R.string.msg_read_aloud), Stimm-Auswahl) darf eine laufende
              * Unterhaltung nicht abschneiden: die laufende Ausgabe verlire damit ihren
              * Abschluss und die Unterhaltung bliebe in der Stufe "spreche" haengen. */
             if (flow.isListening()) {
-                toast("Sprachaufnahme läuft – erst beenden (Unterhaltungs-Knopf).");
+                toast(getString(R.string.toast_rec_running));
             } else {
                 abortVoice();
-                toast("Unterhaltung beendet – danach geht Vorlesen wieder");
+                toast(getString(R.string.toast_conv_end));
             }
             return;
         }
         final String spoken = Voice.spoken(text, VOICE_MAX_CHARS);
         if (spoken.isEmpty()) {
-            if (voiceRound) endVoiceLoop("Ich habe nichts zum Vorlesen gefunden");
+            if (voiceRound) endVoiceLoop(getString(R.string.tts_nothing));
             return;
         }
         if (voiceRound) {
             dictBar.setVisibility(View.VISIBLE);
-            dictStatus.setText("Sprachausgabe wird erzeugt …");
+            dictStatus.setText(getString(R.string.status_tts));
         }
         worker.execute(new Runnable() {
             @Override
@@ -1313,7 +1315,7 @@ public class MainActivity extends Activity {
                     @Override
                     public void run() {
                         if (voiceRound && !flow.isSpeaking()) return;   // Unterhaltung schon beendet
-                        if (voiceRound) dictStatus.setText("Ich spreche …   (Knopfdruck unterbricht)");
+                        if (voiceRound) dictStatus.setText(getString(R.string.status_speaking));
                         voice.play(audio, new Voice.Done() {
                             @Override
                             public void onDone(boolean ok, String error) {
@@ -1338,13 +1340,13 @@ public class MainActivity extends Activity {
             return;
         }
         boolean nextTurn = flow.continueAfterSpeech(true, cfg.voiceLoop);   // spreche -> Pause
-        logVoice(nextTurn ? "Ausgabe zu Ende, naechste Aufnahme" : "Ausgabe zu Ende, Unterhaltung aus");
+        logVoice(nextTurn ? getString(R.string.log_turn_next) : getString(R.string.log_turn_off));
         if (!nextTurn) {
             endVoiceLoop(cfg.voiceLoop ? null
-                    : "Unterhaltung aus – nur eine Runde (laenger: Einstellungen)");
+                    : getString(R.string.toast_conv_one));
             return;
         }
-        dictStatus.setText("● Sprich weiter …");
+        dictStatus.setText(getString(R.string.rec_speak_more));
         ui.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -1390,7 +1392,7 @@ public class MainActivity extends Activity {
             boolean on = flow.sessionOn();
             btnChat.setColorFilter(Util.color(on ? 0xFF10A37F : 0xFF9A9AA8));
             btnChat.setContentDescription(on
-                    ? "Sprach-Unterhaltung ist an – reden" : "Sprach-Unterhaltung: reden und die Antwort hören");
+                    ? getString(R.string.desc_conv_on_short) : getString(R.string.desc_conv_off));
         }
     }
 
@@ -1424,20 +1426,20 @@ public class MainActivity extends Activity {
     private void qualityDialog() {
         final String[] sizes = new String[]{"832x832", "1024x1024", "1280x1280"};
         String[] labels = new String[]{
-                "Standard   832 × 832   (rund 3 Sekunden)",
-                "HD   1024 × 1024   (rund 4 Sekunden)",
-                "HD+   1280 × 1280   (rund 6 Sekunden)"
+                getString(R.string.size_std),
+                getString(R.string.size_hd),
+                getString(R.string.size_hdplus)
         };
         new AlertDialog.Builder(this)
-                .setTitle("Bildgröße")
+                .setTitle(getString(R.string.title_image_size))
                 .setSingleChoiceItems(labels, indexOf(sizes, cfg.imageSize), (d, which) -> {
                     cfg.imageSize = Config.normalizeSize(sizes[which]);
                     cfg.save();
                     updateQualityChip();
                     d.dismiss();
-                    toast("Bildgröße " + cfg.imageSize);
+                    toast(getString(R.string.toast_image_size, cfg.imageSize));
                 })
-                .setNegativeButton("Schließen", null)
+                .setNegativeButton(getString(R.string.btn_close), null)
                 .show();
     }
 
@@ -1458,8 +1460,8 @@ public class MainActivity extends Activity {
         boolean on = Search.normalizeMode(cfg.webSearch) == Search.ON;
         btnSearchChip.setTextColor(Util.color(on ? 0xFF2E7CF6 : 0xFF9A9AA8));
         btnSearchChip.setContentDescription(on
-                ? "Websuche an – antippen schaltet sie aus"
-                : "Websuche aus – antippen schaltet sie an");
+                ? getString(R.string.desc_search_on)
+                : getString(R.string.desc_search_off));
     }
 
     /** Ein Druck auf den Knopf schaltet um: aus <-> an. Kein Auswahl-Dialog noetig. */
@@ -1469,31 +1471,28 @@ public class MainActivity extends Activity {
         cfg.save();
         updateSearchChip();
         toast(Search.ON == next
-                ? "Websuche an – vor der Antwort werden die besten Seiten gelesen"
-                : "Websuche aus – das Modell antwortet aus seinem Wissen");
+                ? getString(R.string.toast_search_on)
+                : getString(R.string.toast_search_off));
     }
 
     /** Langer Druck auf den Knopf: Erklaerung und Auswahl. */
     private void searchDialog() {
         final int[] modes = new int[]{Search.OFF, Search.ON};
         String[] labels = new String[]{
-                "Aus   –   das Modell antwortet nur aus seinem Wissen",
-                "An   –   vor der Antwort werden die besten Netz-Treffer gelesen"
+                getString(R.string.search_choice_off),
+                getString(R.string.search_choice_on)
         };
         new AlertDialog.Builder(this)
-                .setTitle("Websuche")
-                .setMessage("Der Knopf in der Eingabezeile schaltet zwischen Aus und An um. "
-                        + "Gesucht wird über die lokale Suchmaschine auf deinem Server; die gefundenen Seiten "
-                        + "werden selbst gelesen, die Antwort nennt dann die Preise, Temperaturen oder Daten daraus. "
-                        + "Die Fundstellen stehen als Links unter der Nachricht.")
+                .setTitle(getString(R.string.title_web_search))
+                .setMessage(getString(R.string.search_help_message))
                 .setSingleChoiceItems(labels, indexOf(modes, cfg.webSearch), (d, which) -> {
                     cfg.webSearch = Search.normalizeMode(modes[which]);
                     cfg.save();
                     updateSearchChip();
                     d.dismiss();
-                    toast("Websuche: " + Search.chipLabel(cfg.webSearch));
+                    toast(getString(R.string.toast_search_chip, Search.chipLabel(cfg.webSearch)));
                 })
-                .setNegativeButton("Schließen", null)
+                .setNegativeButton(getString(R.string.btn_close), null)
                 .show();
     }
 
@@ -1509,10 +1508,10 @@ public class MainActivity extends Activity {
 
     /** Auswahllfeld fuer die Stimme; die Auswahl wird sofort gespeichert und ist gleich zu hoeren. */
     private void addVoiceChoice(LinearLayout box) {
-        box.addView(label("Stimme der Sprachausgabe"));
+        box.addView(label(getString(R.string.label_tts_voice)));
         final Spinner voice = new Spinner(this);
         voice.setAdapter(new android.widget.ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_dropdown_item, Config.VOICE_LABELS));
+                android.R.layout.simple_spinner_dropdown_item, Txt.array(R.array.voice_labels, Config.VOICE_LABELS)));
         final int start = voiceIndex(cfg.ttsVoice);
         voice.setSelection(start);
 
@@ -1523,7 +1522,7 @@ public class MainActivity extends Activity {
         final TextView active = new TextView(this);
         active.setTextSize(12);
         active.setTextColor(Util.color(0xFF9A9A92));
-        active.setText("Gesprochen gerade: " + Config.voiceLabel(cfg.ttsVoice));
+        active.setText(getString(R.string.tts_now, Config.voiceLabel(cfg.ttsVoice)));
 
         voice.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -1536,10 +1535,10 @@ public class MainActivity extends Activity {
                 String picked = Config.normalizeVoice(Config.VOICE_IDS[clampVoice(position)]);
                 cfg.ttsVoice = picked;
                 cfg.save();
-                active.setText("Gesprochen gerade: " + Config.voiceLabel(picked));
+                active.setText(getString(R.string.tts_now, Config.voiceLabel(picked)));
                 /* Die Hoerprobe nennt ihren eigenen Namen, damit hoeren ist, dass die
                  * gewaehlte Stimme wirklich gesprochen wird (und nicht eine andere). */
-                speak("Das ist " + Config.voiceShortName(picked) + ".", false);
+                speak(getString(R.string.tts_sample, Config.voiceShortName(picked)), false);
             }
 
             @Override
@@ -1592,7 +1591,7 @@ public class MainActivity extends Activity {
         List<Db.ChatRef> chats = db.listChats(120);
         if (chats.isEmpty()) {
             TextView empty = new TextView(this);
-            empty.setText("Noch keine Chats.");
+            empty.setText(getString(R.string.empty_chats));
             empty.setTextColor(Util.color(0xFF77776E));
             empty.setTextSize(14);
             int pad = Util.dp(this, 14);
@@ -1641,9 +1640,9 @@ public class MainActivity extends Activity {
 
     private void confirmDelete(final Db.ChatRef c) {
         new AlertDialog.Builder(this)
-                .setTitle("Chat löschen")
+                .setTitle(getString(R.string.title_delete_chat))
                 .setMessage(c.title)
-                .setPositiveButton("Löschen", (d, w) -> {
+                .setPositiveButton(getString(R.string.btn_delete), (d, w) -> {
                     db.deleteChat(c.id);
                     if (c.id.equals(chatId)) openChat(db.newChat(cfg.model));
                     buildDrawer();
@@ -1656,17 +1655,17 @@ public class MainActivity extends Activity {
 
     private void moreMenu() {
         String[] items = new String[]{
-                "Einstellungen",
-                "Modelle neu laden",
-                "Server wechseln",
-                "Abmelden"
+                getString(R.string.settings),
+                getString(R.string.menu_reload_models),
+                getString(R.string.menu_change_server),
+                getString(R.string.logout)
         };
         new AlertDialog.Builder(this)
                 .setItems(items, (d, which) -> {
                     String label = items[which];
-                    if (label.equals("Einstellungen")) settingsDialog();
-                    else if (label.equals("Modelle neu laden")) refreshModels();
-                    else if (label.equals("Server wechseln")) {
+                    if (label.equals(getString(R.string.settings))) settingsDialog();
+                    else if (label.equals(getString(R.string.menu_reload_models))) refreshModels();
+                    else if (label.equals(getString(R.string.menu_change_server))) {
                         Intent i = new Intent(this, LoginActivity.class);
                         i.putExtra("force", true);
                         startActivity(i);
@@ -1694,25 +1693,23 @@ public class MainActivity extends Activity {
         sys.setGravity(Gravity.TOP);
 
         CheckBox stream = new CheckBox(this);
-        stream.setText("Antwort streamen");
+        stream.setText(getString(R.string.setting_stream));
         stream.setChecked(cfg.streaming);
 
         CheckBox trust = new CheckBox(this);
-        trust.setText("TLS-Zertifikat ungeprüft akzeptieren");
+        trust.setText(getString(R.string.setting_trust_tls));
         trust.setChecked(cfg.allowAnyCert);
 
         CheckBox dict = new CheckBox(this);
-        dict.setText("Diktat über die Spracheingabe des Telefons (statt Whisper im LAN)");
+        dict.setText(getString(R.string.setting_dictate_phone));
         dict.setChecked(cfg.systemDict);
 
         CheckBox loop = new CheckBox(this);
-        loop.setText("Unterhaltung: nach der Antwort automatisch weiter aufnehmen (sonst nur eine Runde)");
+        loop.setText(getString(R.string.setting_conv_auto));
         loop.setChecked(cfg.voiceLoop);
 
         TextView speakNote = new TextView(this);
-        speakNote.setText("Vorgelesen wird nur bei der Sprach-Unterhaltung (grüner Knopf). "
-                + "Bei Diktat und getippten Fragen bleibt die App still – einzelne Antworten "
-                + "lassen sich über langes Drücken auf die Nachricht vorlesen.");
+        speakNote.setText(getString(R.string.setting_read_note));
         speakNote.setTextSize(12);
         speakNote.setTextColor(Util.color(0xFF9A9A92));
 
@@ -1728,9 +1725,9 @@ public class MainActivity extends Activity {
         box.addView(speakNote);
 
         new AlertDialog.Builder(this)
-                .setTitle("Einstellungen")
+                .setTitle(getString(R.string.settings))
                 .setView(box)
-                .setPositiveButton("Speichern", (d, w) -> {
+                .setPositiveButton(getString(R.string.btn_save), (d, w) -> {
                     double t = cfg.temperature;
                     try {
                         t = Double.parseDouble(temp.getText().toString().trim());
@@ -1762,9 +1759,9 @@ public class MainActivity extends Activity {
 
     private void logout() {
         new AlertDialog.Builder(this)
-                .setTitle("Abmelden")
-                .setMessage("Zugang entfernen und zur Anmeldung zurück? Chats bleiben auf dem Gerät gespeichert.")
-                .setPositiveButton("Abmelden", (d, w) -> {
+                .setTitle(getString(R.string.logout))
+                .setMessage(getString(R.string.logout_message))
+                .setPositiveButton(getString(R.string.logout), (d, w) -> {
                     cfg.clearAccess();
                     Intent i = new Intent(this, LoginActivity.class);
                     i.putExtra("force", true);
@@ -1777,9 +1774,9 @@ public class MainActivity extends Activity {
 
     private void sessionExpired() {
         new AlertDialog.Builder(this)
-                .setTitle("Anmeldung abgelaufen")
-                .setMessage("Der Server lehnt den Zugang ab. Bitte neu anmelden.")
-                .setPositiveButton("Neu anmelden", (d, w) -> {
+                .setTitle(getString(R.string.title_login_expired))
+                .setMessage(getString(R.string.login_expired_message))
+                .setPositiveButton(getString(R.string.btn_login_again), (d, w) -> {
                     cfg.clearAccess();
                     Intent i = new Intent(this, LoginActivity.class);
                     i.putExtra("force", true);
@@ -1871,7 +1868,7 @@ public class MainActivity extends Activity {
             btnSend.setContentDescription("Stoppen");
         } else {
             btnSend.setImageResource(R.drawable.ic_send);
-            btnSend.setContentDescription("Senden");
+            btnSend.setContentDescription(getString(R.string.desc_send));
         }
     }
 

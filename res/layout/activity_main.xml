@@ -27,7 +27,7 @@
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:background="?android:attr/selectableItemBackground"
-                android:contentDescription="Chats"
+                android:contentDescription="@string/chats"
                 android:scaleType="centerInside"
                 android:src="@drawable/ic_menu"
                 android:tint="@color/text_secondary" />
@@ -45,7 +45,7 @@
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:background="?android:attr/selectableItemBackground"
-                android:contentDescription="Neuer Chat"
+                android:contentDescription="@string/new_chat"
                 android:scaleType="centerInside"
                 android:src="@drawable/ic_new"
                 android:tint="@color/text_secondary" />
@@ -55,7 +55,7 @@
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:background="?android:attr/selectableItemBackground"
-                android:contentDescription="Mehr"
+                android:contentDescription="@string/more"
                 android:scaleType="centerInside"
                 android:src="@drawable/ic_more"
                 android:tint="@color/text_secondary" />
@@ -90,7 +90,7 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:paddingTop="72dp"
-                    android:text="Was kann ich für dich tun?"
+                    android:text="@string/main_empty_hint"
                     android:textColor="@color/text_secondary"
                     android:textSize="21sp"
                     android:visibility="gone" />
@@ -113,7 +113,7 @@
                 android:layout_width="54dp"
                 android:layout_height="54dp"
                 android:background="@drawable/bg_field"
-                android:contentDescription="Bildvorschau"
+                android:contentDescription="@string/desc_image_preview"
                 android:scaleType="centerCrop" />
 
             <TextView
@@ -122,7 +122,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="10dp"
                 android:layout_weight="1"
-                android:text="Bild angehängt"
+                android:text="@string/img_attached"
                 android:textColor="@color/text_secondary"
                 android:textSize="13sp" />
 
@@ -131,7 +131,7 @@
                 android:layout_width="36dp"
                 android:layout_height="36dp"
                 android:background="?android:attr/selectableItemBackground"
-                android:contentDescription="Bild entfernen"
+                android:contentDescription="@string/remove_image"
                 android:scaleType="centerInside"
                 android:src="@drawable/ic_stop"
                 android:tint="@color/text_secondary" />
@@ -153,7 +153,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Aufnahme läuft"
+                android:text="@string/rec_running"
                 android:textColor="@color/danger"
                 android:textSize="14sp" />
 
@@ -162,7 +162,7 @@
                 android:layout_width="36dp"
                 android:layout_height="36dp"
                 android:background="@drawable/bg_circle_ghost"
-                android:contentDescription="Aufnahme verwerfen"
+                android:contentDescription="@string/desc_discard_rec"
                 android:scaleType="centerInside"
                 android:src="@drawable/ic_stop"
                 android:tint="@color/text_secondary" />
@@ -184,7 +184,7 @@
                 android:layout_width="42dp"
                 android:layout_height="42dp"
                 android:background="?android:attr/selectableItemBackground"
-                android:contentDescription="Bild anhängen"
+                android:contentDescription="@string/attach_image"
                 android:scaleType="centerInside"
                 android:src="@drawable/ic_image"
                 android:tint="@color/text_secondary" />
@@ -194,7 +194,7 @@
                 android:layout_width="42dp"
                 android:layout_height="42dp"
                 android:background="?android:attr/selectableItemBackground"
-                android:contentDescription="Diktieren"
+                android:contentDescription="@string/desc_dictate"
                 android:scaleType="centerInside"
                 android:src="@drawable/ic_mic"
                 android:tint="@color/text_secondary" />
@@ -204,7 +204,7 @@
                 android:layout_width="42dp"
                 android:layout_height="42dp"
                 android:background="?android:attr/selectableItemBackground"
-                android:contentDescription="Sprach-Unterhaltung: reden, Antwort wird vorgelesen"
+                android:contentDescription="@string/desc_conv_off"
                 android:scaleType="centerInside"
                 android:src="@drawable/ic_chat_voice"
                 android:tint="@color/text_secondary" />
@@ -216,12 +216,12 @@
                 android:layout_marginLeft="2dp"
                 android:layout_marginRight="2dp"
                 android:background="@drawable/bg_circle_ghost"
-                android:contentDescription="Bildgroesse waehlen"
+                android:contentDescription="@string/desc_pick_size"
                 android:gravity="center"
                 android:minWidth="42dp"
                 android:paddingLeft="8dp"
                 android:paddingRight="8dp"
-                android:text="832"
+                android:text="@string/quality_default"
                 android:textColor="@color/text_secondary"
                 android:textSize="11sp"
                 android:textStyle="bold"
@@ -234,12 +234,12 @@
                 android:layout_marginLeft="2dp"
                 android:layout_marginRight="2dp"
                 android:background="@drawable/bg_circle_ghost"
-                android:contentDescription="Websuche: antippen schaltet aus oder an"
+                android:contentDescription="@string/desc_search_chip"
                 android:gravity="center"
                 android:minWidth="42dp"
                 android:paddingLeft="8dp"
                 android:paddingRight="8dp"
-                android:text="Suche aus"
+                android:text="@string/search_off"
                 android:textColor="@color/text_secondary"
                 android:textSize="11sp"
                 android:textStyle="bold" />
@@ -260,7 +260,7 @@
                 android:layout_width="42dp"
                 android:layout_height="42dp"
                 android:background="@drawable/bg_circle_accent"
-                android:contentDescription="Senden"
+                android:contentDescription="@string/desc_send"
                 android:padding="9dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_send" />
@@ -302,7 +302,7 @@
                     android:layout_width="38dp"
                     android:layout_height="38dp"
                     android:background="?android:attr/selectableItemBackground"
-                    android:contentDescription="Neuer Chat"
+                    android:contentDescription="@string/new_chat"
                     android:scaleType="centerInside"
                     android:src="@drawable/ic_new"
                     android:tint="@color/text_primary" />
@@ -347,7 +347,7 @@
                     style="@style/SideItem"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Abmelden"
+                    android:text="@string/logout"
                     android:textColor="@color/text_secondary"
                     android:textSize="13sp" />
             </LinearLayout>

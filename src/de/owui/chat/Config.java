@@ -43,11 +43,12 @@ public class Config {
             "", "de-DE-TanjaNeural", "de-DE-ChristophNeural",
             "de-AT-IngridNeural", "de-AT-JonasNeural",
             "de-CH-LeniNeural", "de-CH-JanNeural"};
+    /** Englische Etiketten (res/values-de enthaelt die deutschen); fallback ohne Ressourcen. */
     public static final String[] VOICE_LABELS = new String[]{
-            "Server-Standard  (weiblich, de)", "Tanja  (weiblich, de)",
-            "Christoph  (maennlich, de)", "Ingrid  (weiblich, oesterreichisch)",
-            "Jonas  (maennlich, oesterreichisch)", "Leni  (weiblich, Schweizer Dialekt)",
-            "Jan  (maennlich, Schweizer Dialekt)"};
+            "Server default  (female, de)", "Tanja  (female, de)",
+            "Christoph  (male, de)", "Ingrid  (female, Austrian)",
+            "Jonas  (male, Austrian)", "Leni  (female, Swiss German)",
+            "Jan  (male, Swiss German)"};
 
     /** Alte Stimmenamen aus 1.5/1.6: dieselbe Stimme wie der neue Name, nicht verlieren. */
     private static final String[][] LEGACY_VOICES = new String[][]{
@@ -93,7 +94,7 @@ public class Config {
     /** Kurzer Name fuer die Hoerprobe: die App sagt "Das ist Tanja." in der gewaehlten Stimme. */
     public static String voiceShortName(String id) {
         String v = normalizeVoice(id);
-        if (v.isEmpty()) return "die Standardstimme";
+        if (v.isEmpty()) return Txt.t(R.string.voice_default_name, "the default voice");
         for (int i = 0; i < VOICE_IDS.length; i++) {
             if (VOICE_IDS[i].equals(v)) {
                 String l = VOICE_LABELS[i];
@@ -101,16 +102,17 @@ public class Config {
                 return sp > 0 ? l.substring(0, sp) : l;
             }
         }
-        return "die Standardstimme";
+        return Txt.t(R.string.voice_default_name, "the default voice");
     }
 
     /** Etikett fuer die Anzeige; leer = Server-Standard. */
     public static String voiceLabel(String id) {
         String v = normalizeVoice(id);
+        String[] labels = Txt.array(R.array.voice_labels, VOICE_LABELS);
         for (int i = 0; i < VOICE_IDS.length; i++) {
-            if (VOICE_IDS[i].equals(v)) return VOICE_LABELS[i];
+            if (VOICE_IDS[i].equals(v)) return labels[i];
         }
-        return VOICE_LABELS[0];
+        return labels[0];
     }
 
     /** Nur die drei bekannten Groessen, damit ein alter Wert nicht ins Backend rutscht. */

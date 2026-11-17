@@ -38,7 +38,7 @@ public final class Util {
         BitmapFactory.Options probe = new BitmapFactory.Options();
         probe.inJustDecodeBounds = true;
         BitmapFactory.decodeByteArray(raw, 0, raw.length, probe);
-        if (probe.outWidth <= 0 || probe.outHeight <= 0) throw new IOException("Bild konnte nicht gelesen werden");
+        if (probe.outWidth <= 0 || probe.outHeight <= 0) throw new IOException(Txt.t(R.string.err_image_unreadable, "The image could not be read"));
 
         int sample = 1;
         while (probe.outWidth / sample > maxEdge * 2 || probe.outHeight / sample > maxEdge * 2) sample *= 2;
@@ -47,7 +47,7 @@ public final class Util {
         opt.inSampleSize = sample;
         opt.inPreferredConfig = Bitmap.Config.ARGB_8888;
         Bitmap bmp = BitmapFactory.decodeByteArray(raw, 0, raw.length, opt);
-        if (bmp == null) throw new IOException("Bild konnte nicht decodiert werden");
+        if (bmp == null) throw new IOException(Txt.t(R.string.err_image_decode, "The image could not be decoded"));
 
         int w = bmp.getWidth(), h = bmp.getHeight();
         if (Math.max(w, h) > maxEdge) {

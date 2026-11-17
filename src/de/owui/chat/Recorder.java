@@ -32,7 +32,7 @@ public class Recorder {
                 Math.max(min * 2, 4096));
         if (candidate.getState() != AudioRecord.STATE_INITIALIZED) {
             candidate.release();
-            throw new IOException("Mikrofon nicht verfuegbar (Zugriff erlaubt?)");
+            throw new IOException(Txt.t(R.string.err_mic, "Microphone not available (is access allowed?)"));
         }
         rec = candidate;
         pcm.reset();

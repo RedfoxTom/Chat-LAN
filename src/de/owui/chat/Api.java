@@ -84,7 +84,7 @@ public class Api {
 
     private HttpURLConnection open(String path, String method) throws IOException {
         String base = normalizedBase();
-        if (base.isEmpty()) throw new IOException("Keine Server-Adresse eingetragen");
+        if (base.isEmpty()) throw new IOException(Txt.t(R.string.err_no_base, "No server address saved"));
         return openUrl(new URL(base + path), method);
     }
 
@@ -132,7 +132,7 @@ public class Api {
             String body = readBody(code >= 400 ? c.getErrorStream() : c.getInputStream());
             if (code < 200 || code >= 300) throw new ApiException(code, body);
             Map<String, Object> m = Json.asMap(Json.parse(body));
-            if (m == null || Json.str(m, "token") == null) throw new IOException("Login ohne Token beantwortet");
+            if (m == null || Json.str(m, "token") == null) throw new IOException(Txt.t(R.string.err_login_no_token, "Login answered without a token."));
             return m;
         } finally {
             c.disconnect();
@@ -157,7 +157,7 @@ public class Api {
                     out.add(new ModelInfo(id, label, seesImages(o), generatesImages(o)));
                 }
             }
-            if (out.isEmpty()) throw new IOException("Server meldet keine Modelle");
+            if (out.isEmpty()) throw new IOException(Txt.t(R.string.err_no_models, "The server reports no models"));
             return out;
         } finally {
             c.disconnect();
@@ -220,7 +220,7 @@ public class Api {
      */
     public List<GenImage> generateImage(String model, String prompt, String size) throws IOException {
         if (Config.MODE_DIRECT.equals(cfg.mode)) {
-            throw new IOException("Bildgenerierung gibt es nur im Open-WebUI-Modus");
+            throw new IOException(Txt.t(R.string.err_imagegen_webui, "Image generation only exists in Open WebUI mode"));
         }
         Map<String, Object> req = Json.obj("model", model, "prompt", prompt);
         if (size != null && size.toLowerCase().contains("x")) req.put("size", size.toLowerCase());
@@ -249,7 +249,7 @@ public class Api {
                     }
                 }
             }
-            if (out.isEmpty()) throw new IOException("Server hat kein Bild zurueckgegeben");
+            if (out.isEmpty()) throw new IOException(Txt.t(R.string.err_no_image, "The server returned no image"));
             return out;
         } finally {
             c.disconnect();
@@ -274,7 +274,7 @@ public class Api {
                 byte[] buf = new byte[16384];
                 int n;
                 while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
-                if (out.size() == 0) throw new IOException("Der Server hat eine leere Datei geliefert");
+                if (out.size() == 0) throw new IOException(Txt.t(R.string.err_empty_file, "The server delivered an empty file"));
                 return out.toByteArray();
             } finally {
                 in.close();
@@ -295,7 +295,7 @@ public class Api {
      */
     public String transcribe(byte[] audio, String filename, String mime, String language) throws IOException {
         if (Config.MODE_DIRECT.equals(cfg.mode)) {
-            throw new IOException("Diktat braucht den Open-WebUI-Modus (Whisper laeuft auf dem Server)");
+            throw new IOException(Txt.t(R.string.err_dictat_webui, "Dictation needs the Open WebUI mode (Whisper runs on the server)"));
         }
         String boundary = "----chatlan" + Long.toHexString(System.nanoTime());
         String lang = language == null || language.isEmpty() ? "auto" : language;
@@ -335,9 +335,9 @@ public class Api {
      */
     public byte[] speech(String text) throws IOException {
         if (Config.MODE_DIRECT.equals(cfg.mode)) {
-            throw new IOException("Sprachausgabe gibt es nur im Open-WebUI-Modus");
+            throw new IOException(Txt.t(R.string.err_tts_webui, "Speech output only exists in Open WebUI mode"));
         }
-        if (text == null || text.trim().isEmpty()) throw new IOException("Es gibt nichts vorzulesen");
+        if (text == null || text.trim().isEmpty()) throw new IOException(Txt.t(R.string.err_nothing_to_read, "There is nothing to read aloud"));
         Map<String, Object> body = Json.obj("input", text);
         String voice = Config.normalizeVoice(cfg.ttsVoice);
         if (!voice.isEmpty()) body.put("voice", voice);
@@ -371,10 +371,10 @@ public class Api {
      */
     public List<Search.Hit> webSearch(String question, String previousQuestion) throws IOException {
         if (Config.MODE_DIRECT.equals(cfg.mode)) {
-            throw new IOException("Websuche laeuft ueber Open WebUI – im Direktmodus gibt es sie nicht");
+            throw new IOException(Txt.t(R.string.err_search_webui, "Web search runs through Open WebUI — direct mode has none"));
         }
         String q = Search.queryWithContext(question, previousQuestion);
-        if (q.isEmpty()) throw new IOException("Kein Suchbegriff uebrig geblieben");
+        if (q.isEmpty()) throw new IOException(Txt.t(R.string.err_no_search_term, "No search term left"));
         List<Object> queries = new ArrayList<Object>();
         queries.add(q);
         byte[] payload = Json.write(Json.obj("queries", queries)).getBytes("UTF-8");
@@ -391,7 +391,7 @@ public class Api {
             try {
                 parsed = Json.parse(body);
             } catch (Exception malformed) {
-                throw new IOException("Suchantwort des Servers war unlesbar");
+                throw new IOException(Txt.t(R.string.err_search_unreadable, "The server's search reply was unreadable"));
             }
             return Search.parse(parsed);
         } finally {
@@ -520,7 +520,7 @@ public class Api {
                 String text = m.text;
                 if (text == null || text.trim().isEmpty()) {
                     // erzeugte Bilder der App bleiben local: das Sprachmodell kann sie nicht sehen
-                    text = m.hasImage() ? "[Bild wurde erzeugt]" : "";
+                    text = m.hasImage() ? Txt.t(R.string.img_created, "[image created]") : "";
                 }
                 if (text.isEmpty()) continue;
                 msgs.add(Json.obj("role", m.role, "content", text));
@@ -583,7 +583,7 @@ public class Api {
     private String readWhole(HttpURLConnection c, Delta cb) throws IOException {
         String body = readBody(c.getInputStream());
         Map<String, Object> root = Json.asMap(Json.parse(body));
-        if (root == null) throw new IOException("Antwort war kein JSON: " + clip(body, 200));
+        if (root == null) throw new IOException(Txt.t(R.string.err_not_json, "Reply was not JSON: %1$s", clip(body, 200)));
         if (root.containsKey("error") || root.containsKey("detail")) throw new ApiException(200, body);
         String text = Json.str(root, "choices", "0", "message", "content");
         if (text == null) {
@@ -594,7 +594,7 @@ public class Api {
                 if (text == null) text = Json.str(first, "text");
             }
         }
-        if (text == null) throw new IOException("Antwort ohne Antworttext: " + clip(body, 200));
+        if (text == null) throw new IOException(Txt.t(R.string.err_no_answer_text, "Reply without answer text: %1$s", clip(body, 200)));
         if (cb != null) cb.onDelta(text, text);
         return text;
     }
@@ -647,7 +647,7 @@ public class Api {
         } catch (IOException e) {
             throw e;
         } catch (Exception e) {
-            throw new IOException("TLS-Einrichtung fehlgeschlagen: " + e.getMessage(), e);
+            throw new IOException(Txt.t(R.string.err_tls_setup, "TLS setup failed: %1$s", e.getMessage()), e);
         }
     }
 
@@ -720,19 +720,22 @@ public class Api {
             if (t instanceof javax.net.ssl.SSLHandshakeException
                     || t instanceof java.security.cert.CertificateException
                     || t instanceof javax.net.ssl.SSLException) {
-                return "Zertifikat wird nicht akzeptiert. Die App bündelt die LAN-CA nur, wenn sie beim Bau "
-                        + "als assets/ca.crt dabei lag. Für den Test in der Anmeldung "
-                        + "„TLS-Zertifikat ungeprüft akzeptieren“ ankreuzen.";
+                return Txt.t(R.string.err_cert,
+                        "The certificate is not accepted. The app only bundles the LAN CA when it was placed "
+                                + "as assets/ca.crt while building. For testing, tick \u201eAccept the TLS certificate "
+                                + "without verification\u201c on the login screen.");
             }
             if (t instanceof java.net.UnknownHostException) {
-                return "Host nicht gefunden. Prüfe die Adresse und ob das Gerät im selben LAN bzw. VPN hängt.";
+                return Txt.t(R.string.err_unknown_host,
+                        "Host not found. Check the address and whether the device is on the same LAN or VPN.");
             }
             if (t instanceof java.net.ConnectException
                     || t instanceof java.net.NoRouteToHostException
                     || t instanceof java.net.SocketTimeoutException
                     || t instanceof java.net.SocketException) {
-                return "Keine Verbindung zum Server. Läuft Open WebUI? Ist der Port in der Firewall offen "
-                        + "(3443 / 3000 / 8080)?";
+                return Txt.t(R.string.err_no_connection,
+                        "No connection to the server. Is Open WebUI running? Is the port open in the firewall "
+                                + "(3443 / 3000 / 8080)?");
             }
             if (t instanceof ApiException && t.getMessage() != null) return t.getMessage();
         }
@@ -778,22 +781,24 @@ public class Api {
         if ((status == 400 || status == 401 || status == 422)
                 && body != null && body.toLowerCase().contains("email or password")) {
             // Open WebUI meldet falsche Zugangsdaten als 400 mit englischem Text
-            return "Login fehlgeschlagen: E-Mail oder Passwort ist falsch.";
+            return Txt.t(R.string.err_login_pw, "Login failed: wrong e-mail or password.");
         }
         switch (status) {
             case 401:
-                return "Zugang abgelehnt (401). Login abgelaufen oder API-Key ungültig." + (detail.isEmpty() ? "" : " — " + detail);
+                return Txt.t(R.string.err_401, "Access denied (401). Login expired or API key invalid.") + (detail.isEmpty() ? "" : " — " + detail);
             case 403:
-                return "Zugriff verweigert (403). " + (detail.isEmpty() ? "Modell oder Funktion ist für diese Kontenrolle gesperrt." : detail);
+                return Txt.t(R.string.err_403, "Access refused (403). ") + (detail.isEmpty() ? Txt.t(R.string.err_403_default, "Model or feature is blocked for this account role.") : detail);
             case 404:
-                return "Endpunkt nicht gefunden (404). " + (detail.isEmpty() ? "Ist die Adresse einer Open-WebUI-Instanz oder einer OpenAI-API?" : detail);
+                return Txt.t(R.string.err_404, "Endpoint not found (404). ") + (detail.isEmpty() ? Txt.t(R.string.err_404_default, "Is the address an Open WebUI instance or an OpenAI API?") : detail);
             case 400:
             case 422:
-                return "Anfrage abgelehnt (" + status + "). " + (detail.isEmpty() ? "Modell unbekannt?" : detail);
+                return Txt.t(R.string.err_bad_request, "Request refused (%1$d). ", status)
+                        + (detail.isEmpty() ? Txt.t(R.string.err_unknown_model, "Unknown model?") : detail);
             case 502:
             case 503:
             case 504:
-                return "Backend nicht erreichbar (" + status + "). " + (detail.isEmpty() ? "Läuft der Modell-Server?" : detail);
+                return Txt.t(R.string.err_backend, "Backend unreachable (%1$d). ", status)
+                        + (detail.isEmpty() ? Txt.t(R.string.err_backend_default, "Is the model server running?") : detail);
             default:
                 return "HTTP " + status + (detail.isEmpty() ? "" : ": " + detail);
         }

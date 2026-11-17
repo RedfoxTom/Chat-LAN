@@ -91,6 +91,21 @@ Project: this repository.
        * Documentation neutralised: `Config.DEFAULT_URL` and the three suggestions in the login
          screen use an example value – no real LAN addresses in the repository.
 
+- current `main` (after 1.8.1) – Interface language: English became the default interface
+  language, German is now a translation overlay.
+  * `res/values/strings.xml` holds 175 English texts (labels, buttons, hints, toasts, every error
+    message); `res/values-de/strings.xml` is the German twin with the identical key list. Layouts
+    use `@string/...` only, code uses `getString` / `Txt.t` with an English fallback so the JVM
+    tests still run without Android resources.
+  * Build profiles: `OWUI_PUBLIC=1 bash build.sh` compiles without `res/values-de` and without
+    `assets/ca.crt` (public APK, English on every phone); plain `bash build.sh` keeps the German
+    overlay and the LAN CA (home build). Guarded by `Test.languageTests()`: key parity between
+    the two languages, matching `%1$s` placeholders, no referenced key without a resource, no
+    hardcoded label in a layout.
+  * The German line is kept, not frozen away: same code base plus the German overlay, and the old
+    German build is preserved as the tag `internal-1.8`. Both languages are maintained together;
+    what goes out on GitHub is English.
+
 ## Quick table
 
 | Version | Fixed / added | Guarded by |
@@ -102,6 +117,7 @@ Project: this repository.
 | 1.7 | Voices fixed: "male and female sound the same" – Katja/Conrad are aliases of Tanja/Christoph, so `de-DE` only has two real voices; now 3 female + 3 male (de / AT / CH) | byte-comparison test per voice |
 | 1.8 | Voice conversation listens again after the answer: one stage at a time in `VoiceFlow.java` instead of a "still running" flag | `Test.voiceFlowTests()` (21 checks) |
 | 1.8.1 | Public build: no LAN CA inside the APK (`OWUI_NO_CA=1`), different signing key than 1.0 – 1.8 (uninstall the old version first), APKs distributed as GitHub releases, documentation neutralised (example address only) | release notes |
+| current main | Interface language: English default (`res/values`), German as overlay (`res/values-de`), build profiles `OWUI_PUBLIC=1` / default | `Test.languageTests()` |
 
 ## Open voice items
 

@@ -46,7 +46,7 @@ public class Search {
     }
 
     public static String chipLabel(int m) {
-        return normalizeMode(m) == ON ? "Suche an" : "Suche aus";
+        return normalizeMode(m) == ON ? Txt.t(R.string.search_on, "Search on") : Txt.t(R.string.search_off, "Search off");
     }
 
     public static boolean wantsSearch(int mode, String text) {
@@ -60,6 +60,11 @@ public class Search {
             "kannst du", "kannst", "koenntest du", "bitte", "sag mir", "sage mir", "suche", "such",
             "googel", "googeln", "google", "recherchiere", "recherchier", "schau nach", "checke", "check",
             "prüfe", "pruefe", "finde", "zeige mir", "weisst du", "weißt du",
+            // englische Bittfloskeln (oeffentliche Sprache ist Englisch)
+            "could you tell me", "can you tell me", "could you please", "can you please", "what is the price of",
+            "how much does it cost", "how much is", "how much are", "look up", "search for", "find out",
+            "what is", "what are", "how much", "how many", "can you", "could you", "would you", "please",
+            "tell me", "show me", "check",
     };
 
     private static final Pattern NUMBERS = Pattern.compile("[0-9][0-9.,:/-]");
@@ -69,6 +74,8 @@ public class Search {
             "und", "auch", "mit", "bei", "beim", "für", "fuer", "wie", "was", "wann", "wo", "wohin",
             "dann", "dazu", "noch", "oder", "aber", "genau", "gleich", "selbe", "stattdessen",
             "alternativ", "günstiger", "gunstiger", "teurer", "billiger",
+            // english follow-up words
+            "and", "with", "or", "but", "also", "then", "more", "less", "cheaper", "instead",
     };
 
     /**
@@ -252,20 +259,20 @@ public class Search {
     public static String systemBlock(List<Hit> hits) {
         if (hits == null || hits.isEmpty()) return "";
         StringBuilder b = new StringBuilder();
-        b.append("Soeben im LAN searched (lokale Suchmaschine), die Seiten selbst wurden gelesen. ")
-                .append("Die Auszuege unten sind echter Inhalt dieser Seiten und aktueller als dein Wissen.\n")
-                .append("Nenne konkrete Werte aus den Auszuegen: Preise mit Euro-Betrag, Temperaturen in Grad, ")
-                .append("Kurse, Uhrzeiten, Namen, Datum der Seite. Sage NICHT bloess, dass es dafuer Portale gebe - ")
-                .append("sondern nimm die Zahlen der gefundenen Seiten. Wenn nichts passt, sage das offen. ")
-                .append("Zitier die Quelle mit Namen.\n");
+        b.append("Just searched with the search engine on your own LAN server; the pages themselves were read. ")
+                .append("The extracts below are real content from those pages and fresher than your knowledge.\n")
+                .append("Name concrete values from the extracts: prices with the euro amount, temperatures in degrees, ")
+                .append("rates, times of day, names, the date of the page. Do NOT just say that portals exist for this - ")
+                .append("use the numbers from the pages that were found. If nothing fits, say so openly. ")
+                .append("Cite the source by name. Answer in the language of the user's question.\n");
         int n = 1;
         for (Hit h : hits) {
             b.append('\n').append(n++).append(") ").append(h.title);
             if (!h.url.isEmpty()) b.append("  [").append(h.url).append(']');
             b.append('\n');
-            if (!h.snippet.isEmpty()) b.append("   Kurzangabe: ").append(clip(h.snippet, 300)).append('\n');
+            if (!h.snippet.isEmpty()) b.append("   Note: ").append(clip(h.snippet, 300)).append('\n');
             String ex = excerpt(h.content, SITE_CHARS);
-            if (!ex.isEmpty()) b.append("   Text von der Seite: ").append(ex).append('\n');
+            if (!ex.isEmpty()) b.append("   Page text: ").append(ex).append('\n');
         }
         return b.toString().trim();
     }

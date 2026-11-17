@@ -35,6 +35,7 @@ public class Test {
         routerTests();
         voiceFlowTests();
         searchTests();
+        languageTests();
         dbTests();
 
         String mode = args.length > 0 ? args[0] : "live";
@@ -180,25 +181,109 @@ public class Test {
         ok("Etikett 832", "832".equals(Config.sizeLabel("832x832"))
                 && "HD".equals(Config.sizeLabel("1024x1024"))
                 && "HD+".equals(Config.sizeLabel("1280x1280")));
-        ok("Stimme-Etikett", "Server-Standard  (weiblich, de)".equals(Config.voiceLabel(""))
+        ok("voice label", "Server default  (female, de)".equals(Config.voiceLabel(""))
                 && Config.voiceLabel("de-DE-TanjaNeural").startsWith("Tanja")
-                && Config.voiceLabel("Quatsch").equals("Server-Standard  (weiblich, de)"));
+                && Config.voiceLabel("Quatsch").equals("Server default  (female, de)"));
         ok("Stimmenliste: Id und Etikett gleich lang", Config.VOICE_IDS.length == Config.VOICE_LABELS.length);
         /* Katja und Conrad sind die alten Namen von Tanja und Christoph: ein gespeicherter
          * alter Wert darf nicht still auf den Server-Standard fallen. */
         ok("alte Stimmenamen bleiben die gleiche Stimme",
                 "de-DE-TanjaNeural".equals(Config.normalizeVoice("de-DE-KatjaNeural"))
                         && "de-DE-ChristophNeural".equals(Config.normalizeVoice("de-DE-ConradNeural")));
-        ok("Hoerprobe nennt den Stimmnamen",
+        ok("voice sample names the voice",
                 "Christoph".equals(Config.voiceShortName("de-DE-ChristophNeural"))
                         && "Tanja".equals(Config.voiceShortName("de-DE-KatjaNeural"))
-                        && "die Standardstimme".equals(Config.voiceShortName("")));
-        int maennlich = 0, weiblich = 0;
+                        && "the default voice".equals(Config.voiceShortName("")));
+        int male = 0, female = 0;
         for (String l : Config.VOICE_LABELS) {
-            if (l.contains("maennlich")) maennlich++;
-            if (l.contains("weiblich")) weiblich++;
+            if (l.contains("male")) male++;
+            if (l.contains("female")) female++;
         }
-        ok("Auswahl hat maennliche und weibliche Stimmen", maennlich >= 2 && weiblich >= 2);
+        ok("voice choice has male and female voices", male >= 2 && female >= 2);
+    }
+
+    /* ------------------------------------------------ Interface language */
+
+    /**
+     * Die Oberflaeche ist englisch (res/values), Deutsch liegt als Overlay daneben
+     * (res/values-de). Beide Sprachpaetten muessen deckungsgleich bleiben, sonst fehlt
+     * im internen deutschen Build ein Text oder ein %1$s-Platzhalter geht verloren.
+     */
+    static void languageTests() throws Exception {
+        System.out.println("== Interface language (resources) ==");
+        java.nio.file.Path enF = pathlib("res/values/strings.xml");
+        java.nio.file.Path deF = pathlib("res/values-de/strings.xml");
+        ok("english default and german overlay both present",
+                java.nio.file.Files.exists(enF) && java.nio.file.Files.exists(deF));
+        java.util.Map<String, String> en = texts(enF);
+        java.util.Map<String, String> de = texts(deF);
+        java.util.Set<String> onlyEn = new java.util.TreeSet<>(en.keySet());
+        onlyEn.removeAll(de.keySet());
+        java.util.Set<String> onlyDe = new java.util.TreeSet<>(de.keySet());
+        onlyDe.removeAll(en.keySet());
+        ok("every english text has a german twin (" + en.size() + " texts)",
+                onlyEn.isEmpty() && onlyDe.isEmpty());
+        if (!onlyEn.isEmpty()) System.out.println("    missing in res/values-de: " + onlyEn);
+        if (!onlyDe.isEmpty()) System.out.println("    missing in res/values: " + onlyDe);
+
+        java.util.List<String> argMismatch = new java.util.ArrayList<>();
+        for (Map.Entry<String, String> e : en.entrySet()) {
+            if (!de.containsKey(e.getKey())) continue;
+            if (!placeholders(e.getValue()).equals(placeholders(de.get(e.getKey())))) argMismatch.add(e.getKey());
+        }
+        ok("placeholders match in both languages", argMismatch.isEmpty());
+        if (!argMismatch.isEmpty()) System.out.println("    mismatching keys: " + argMismatch);
+
+        java.util.Set<String> used = new java.util.TreeSet<>();
+        try (java.util.stream.Stream<java.nio.file.Path> files = java.nio.file.Files.walk(pathlib("src"))) {
+            for (java.nio.file.Path f : (Iterable<java.nio.file.Path>) files
+                    .filter(x -> x.toString().endsWith(".java"))::iterator) {
+                java.util.regex.Matcher m = java.util.regex.Pattern.compile("R\\.string\\.([a-z0-9_]+)")
+                        .matcher(java.nio.file.Files.readString(f));
+                while (m.find()) used.add(m.group(1));
+            }
+        }
+        java.util.List<String> undefined = new java.util.ArrayList<>();
+        for (String k : used) if (!en.containsKey(k)) undefined.add(k);
+        ok("every referenced text exists in res/values (" + used.size() + " referenced)", undefined.isEmpty());
+        if (!undefined.isEmpty()) System.out.println("    undefined keys: " + undefined);
+
+        java.util.List<String> literals = new java.util.ArrayList<>();
+        try (java.util.stream.Stream<java.nio.file.Path> files = java.nio.file.Files.walk(pathlib("res/layout"))) {
+            for (java.nio.file.Path f : (Iterable<java.nio.file.Path>) files
+                    .filter(x -> x.toString().endsWith(".xml"))::iterator) {
+                java.util.regex.Matcher m = java.util.regex.Pattern
+                        .compile("android:(text|hint|contentDescription)=\"([^\"]*)\"")
+                        .matcher(java.nio.file.Files.readString(f));
+                while (m.find()) {
+                    String v = m.group(2).trim();
+                    if (!v.isEmpty() && !v.startsWith("@")) literals.add(f.getFileName() + " -> " + v);
+                }
+            }
+        }
+        ok("no hardcoded label in the layouts (all via @string)", literals.isEmpty());
+        for (String l : literals) System.out.println("    literal: " + l);
+
+        ok("english default is english (no german umlaut strings)",
+                !en.containsKey("settings") || !en.get("settings").contains("Ã¤"));
+    }
+
+    static java.nio.file.Path pathlib(String relative) { return java.nio.file.Paths.get(relative); }
+
+    static java.util.Map<String, String> texts(java.nio.file.Path file) throws java.io.IOException {
+        java.util.Map<String, String> out = new java.util.LinkedHashMap<>();
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("<string name=\"([^\"]+)\"[^>]*>(.*?)</string>", java.util.regex.Pattern.DOTALL)
+                .matcher(java.nio.file.Files.readString(file));
+        while (m.find()) out.put(m.group(1), m.group(2));
+        return out;
+    }
+
+    static java.util.Set<String> placeholders(String value) {
+        java.util.Set<String> out = new java.util.TreeSet<>();
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("%\\d+\\$[a-z]").matcher(value);
+        while (m.find()) out.add(m.group());
+        return out;
     }
 
     static void dbTests() {
@@ -341,9 +426,9 @@ public class Test {
         ok("Modus normalisiert", Search.normalizeMode(99) == Search.OFF
                 && Search.normalizeMode(-2) == Search.OFF
                 && Search.normalizeMode(Search.ON_LEGACY) == Search.ON);
-        ok("Etikett auf dem Knopf", "Suche an".equals(Search.chipLabel(Search.ON))
-                && "Suche aus".equals(Search.chipLabel(Search.OFF))
-                && "Suche aus".equals(Search.chipLabel(99)));
+        ok("label on the button", "Search on".equals(Search.chipLabel(Search.ON))
+                && "Search off".equals(Search.chipLabel(Search.OFF))
+                && "Search off".equals(Search.chipLabel(99)));
 
         ok("Suchbegriff ohne Fragezeichen", "Wie wird das Wetter morgen in Bielefeld"
                 .equals(Search.query("Wie wird das Wetter morgen in Bielefeld?")));

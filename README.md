@@ -25,6 +25,25 @@ services). Voice here is ASR → chat → TTS, so everything stays in your own n
 
 The app interface itself is German.
 
+## Interface language
+
+The interface is **English**. Every label, button, hint, toast and error message is a text
+resource in `res/values/strings.xml` and is referenced from the code (`@string/...` in the
+layouts, `getString(R.string....)` / `Txt.t(R.string....)` in the Java files) – no UI sentence
+is written into a layout or a Java file, so a wording lives in exactly one place. On a plain JVM
+(the tests) the resources are stubbed and the code falls back to its English source text.
+
+`res/values-de/strings.xml` is the German twin of the same key list. It is there because the
+maintainer runs the app at home in German: an internal build keeps the overlay, a public build is
+compiled without it and is English on every phone whatever the phone's system language is. Both
+languages live in the same source tree, so a fix reaches both at the same time and a missing
+translation fails a test (`Test.languageTests()`).
+
+```bash
+bash build.sh                # internal build: German overlay included
+OWUI_PUBLIC=1 bash build.sh  # public build: English only, no LAN CA
+```
+
 ## Building
 
 The toolbox (no Gradle, no Android Studio needed):
@@ -41,8 +60,12 @@ python3                      -> injects the dex into the APK
 export JAVA_HOME=/path/to/jdk          # default: $HOME/tools/owui-android/jdk
 export ANDROID_HOME=/path/to/sdk       # default: $HOME/Android/Sdk
 cd Chat-LAN
-bash build.sh                          # -> build/apk/owui-chat.apk
+OWUI_PUBLIC=1 bash build.sh            # -> build/apk/owui-chat.apk (English, no LAN CA)
 ```
+
+`OWUI_PUBLIC=1` is the profile for anything you hand to other people: English interface only
+(the `res/values-de` overlay is not compiled in) and no LAN CA. Without it the APK additionally
+carries the German overlay and your own `assets/ca.crt` – that is the home build.
 
 On its first run `build.sh` creates a signing keystore (`build/owui-release.keystore`) and
 writes its password to `build/owui-release.keystore.pass`. Neither the keystore nor the
@@ -66,8 +89,10 @@ Android classes needed for those tests live in `test/android/`.
 ```bash
 export JAVA_HOME=/path/to/jdk
 export PATH="$JAVA_HOME/bin:$PATH"
+bash build.sh   # once: it generates the resource ids (R.java) that the app code references
 javac -d build/jvm $(find src test -name '*.java' \
-        | grep -v -e MainActivity -e LoginActivity -e '/Voice.java' -e '/Recorder.java')
+        | grep -v -e MainActivity -e LoginActivity -e '/Voice.java' -e '/Recorder.java') \
+    build/apk/gen/de/owui/chat/R.java
 java -cp build/jvm de.owui.chat.Test offline     # no server, 130+ checks
 OWUI_TOKEN=... java -cp build/jvm de.owui.chat.Test live   # against the real server
 ```
@@ -108,8 +133,8 @@ To change it: the default in `src/de/owui/chat/Config.java`, the suggestions in
 ## Downloading the APK
 
 Ready-made APKs are under [Releases](https://github.com/RedfoxTom/Chat-LAN/releases). The
-public APKs are built with `OWUI_NO_CA=1` (no LAN CA inside the APK) and signed with the
-public key `build/owui-public.keystore`. If you instead build with your own key
+public APKs are built with `OWUI_PUBLIC=1` (English interface, no LAN CA inside the APK) and
+signed with the public key `owui-public.keystore`. If you instead build with your own key
 (`bash build.sh`, with `assets/ca.crt`), you have to uninstall the previous version before
 installing – different signatures do not allow an update.
 

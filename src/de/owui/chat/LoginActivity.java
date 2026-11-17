@@ -33,6 +33,7 @@ public class LoginActivity extends Activity {
     @Override
     protected void onCreate(Bundle saved) {
         super.onCreate(saved);
+        Txt.init(this);
         cfg = new Config(this);
         setContentView(R.layout.activity_login);
 
@@ -91,7 +92,7 @@ public class LoginActivity extends Activity {
         if (busy) return;
         String base = url.getText().toString().trim();
         if (base.isEmpty()) {
-            fail("Bitte Server-Adresse angeben, zum Beispiel https://192.168.1.20:3443");
+            fail(getString(R.string.login_need_url));
             return;
         }
         if (!base.startsWith("http://") && !base.startsWith("https://")) base = "https://" + base;
@@ -101,13 +102,13 @@ public class LoginActivity extends Activity {
         final String pw = pass.getText().toString();
         final String key = apiKey.getText().toString().trim();
         if (owui && (em.isEmpty() || pw.isEmpty())) {
-            fail("Für den Open-WebUI-Login brauchst du E-Mail und Passwort.");
+            fail(getString(R.string.login_need_email));
             return;
         }
 
         busy = true;
         connect.setEnabled(false);
-        status.setText("Verbinde …");
+        status.setText(getString(R.string.connecting));
         status.setTextColor(Util.color(0xFF9A9A92));
 
         final String target = base;
@@ -125,7 +126,7 @@ public class LoginActivity extends Activity {
                     if (owui) {
                         Map<String, Object> acc = api.signIn(em, pw);
                         Object t = acc.get("token");
-                        if (t == null) throw new Api.ApiException(200, "Anmeldung ohne Token beantwortet.");
+                        if (t == null) throw new Api.ApiException(200, getString(R.string.err_login_no_token));
                         cfg.token = String.valueOf(t);
                         cfg.email = em;
                         Object n = acc.get("name");
@@ -139,8 +140,7 @@ public class LoginActivity extends Activity {
                     final List<ModelInfo> models = api.listModels();
                     if (models.isEmpty()) {
                         throw new Api.ApiException(200,
-                                "Der Server nennt keine Modelle. Prüfe die Adresse: Open WebUI läuft über Port "
-                                        + "3443/3000, der Modell-Server direkt über Port 8080.");
+                                getString(R.string.login_no_models_message));
                     }
                     boolean keep = false;
                     for (ModelInfo m : models) {
@@ -153,7 +153,7 @@ public class LoginActivity extends Activity {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            Toast.makeText(LoginActivity.this, count + " Modelle verbunden", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(LoginActivity.this, getString(R.string.login_models_count, count), Toast.LENGTH_SHORT).show();
                             openChat();
                         }
                     });
