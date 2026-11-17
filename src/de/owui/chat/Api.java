@@ -120,6 +120,36 @@ public class Api {
         }
     }
 
+    /**
+     * Kurzes GET gegen eine absolute Prüf-URL mit derselben TLS-Einstellung (LAN-CA oder
+     * "ungeprüft"). Für die Server-Suche in Discover: kurzer Timeout, kein Anhängen eines
+     * Tokens, damit ein alter Token einen Fremdrechner nicht als "unseren" Server ausgibt.
+     */
+    public Discover.Answer probeAbsolute(String absoluteUrl) throws IOException {
+        URL u = new URL(absoluteUrl);
+        HttpURLConnection c;
+        if ("https".equalsIgnoreCase(u.getProtocol())) {
+            HttpsURLConnection h = (HttpsURLConnection) u.openConnection();
+            h.setSSLSocketFactory(sslContext().getSocketFactory());
+            h.setHostnameVerifier(verifier);
+            c = h;
+        } else {
+            c = (HttpURLConnection) u.openConnection();
+        }
+        c.setRequestMethod("GET");
+        c.setConnectTimeout(4000);
+        c.setReadTimeout(6000);
+        c.setRequestProperty("Accept", "application/json");
+        c.setRequestProperty("User-Agent", "ChatLAN/1.0 Android");
+        try {
+            int code = c.getResponseCode();
+            String body = readBody(code >= 400 ? c.getErrorStream() : c.getInputStream());
+            return new Discover.Answer(code, body);
+        } finally {
+            c.disconnect();
+        }
+    }
+
     public Map<String, Object> signIn(String email, String password) throws IOException {
         HttpURLConnection c = open("/api/v1/auths/signin", "POST");
         try {

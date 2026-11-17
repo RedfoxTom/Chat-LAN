@@ -23,7 +23,7 @@ No React/Capacitor, no Gradle: a small native Android app in Java, built with
 Deliberately **not** built in: a real realtime voice call (that runs through cloud
 services). Voice here is ASR → chat → TTS, so everything stays in your own network.
 
-The app interface itself is German.
+The app interface is English; German exists as a translation overlay (see below).
 
 ## Interface language
 
@@ -120,15 +120,33 @@ GET /api/v1/configs/namespace/web.search
 
 ## Signing in to the app
 
-| Mode | Address |
-|---|---|
-| Open WebUI | `https://<server>:3443` (HTTPS through your own CA) or `http://<server>:3000` |
-| Direct (OpenAI-compatible) | `http://<server>:8080/v1` – no login, no API key needed |
+Type one thing: the address of your server, without protocol and port – `192.168.1.20`,
+`chat.lan`, `192.168.1.50`. Press Connect and the app finds the rest itself
+(`src/de/owui/chat/Discover.java`), in this order:
 
-`Config.DEFAULT_URL` and the three suggestions in the login screen are set to an example
-value (`192.168.1.20`, ports 3443 / 3000 / 8080) – an invented address, not a real network.
-To change it: the default in `src/de/owui/chat/Config.java`, the suggestions in
-`res/layout/activity_login.xml`.
+| Tried | Taken as | Recognised by |
+|---|---|---|
+| `https://<server>:3443` | Open WebUI over HTTPS | `GET /api/version` answers 200 with `{"version": …}`, no login needed |
+| `http://<server>:3000` | Open WebUI without TLS | the same answer |
+| `http://<server>:8080` | model server, direct mode | `GET /api/version` answers 404, but `GET /v1/models` answers 200 with a JSON model list |
+
+The first one that answers wins, the login form (Open WebUI login vs. API key) switches to
+match and the found address appears in the field, so it is visible what was chosen. "Any 200"
+is not enough: Open WebUI answers `/v1/models` without a token with the HTML page of its own
+web interface, and HTML is not a model server.
+
+Under the field, `HTTPS 3443` / `HTTP 3000` / `DIRECT 8080` force one port – they keep the host
+you typed and change protocol and port only. Use them for a server on another port. A full
+address in the field (`http://host:9000`) is used exactly as typed, nothing is searched.
+
+If nothing answers, the app says which ports it tried. If HTTPS answered but the certificate is
+unknown, it says that instead – see `assets/README.txt` for putting your own CA into the build,
+or tick "Accept the TLS certificate without checking" while testing.
+
+`Config.DEFAULT_URL` is the bare example host `192.168.1.20` (an invented address, not a real
+network); the ports live as constants in `Discover.java`. No real network address appears
+anywhere in the repository. Microphone and voice conversation need HTTPS: a plain HTTP
+connection chats fine but has no dictation.
 
 ## Downloading the APK
 

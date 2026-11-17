@@ -91,6 +91,27 @@ Project: this repository.
        * Documentation neutralised: `Config.DEFAULT_URL` and the three suggestions in the login
          screen use an example value – no real LAN addresses in the repository.
 
+- 1.9  Login simplified: one address instead of four (built and tested, `src/de/owui/chat/Discover.java`,
+       `Test.discoverTests()`, `Test.discoverLive()`):
+       * The login field asks for the host only (`192.168.1.20`, `chat.lan`, `192.168.1.50`). Pressing
+         Connect searches `https://host:3443` then `http://host:3000` then `http://host:8080`; the first
+         answer wins and sets protocol, port and login mode (Open WebUI login vs. API key), and the found
+         address is written back into the field.
+       * Recognised by endpoint, not by "any answer is fine": Open WebUI answers `GET /api/version` with
+         `{"version": …}` without a login, a model server answers 404 there and `GET /v1/models` with a
+         JSON model list. Open WebUI answers `/v1/models` without a token with the HTML page of its own
+         interface, so HTML is never taken for a model server.
+       * The three hardcoded address rows became three port buttons (`HTTPS 3443` / `HTTP 3000` /
+         `DIRECT 8080`): they keep the host that was typed and change protocol and port only. A full
+         address in the field is used as typed, nothing is searched.
+       * Two different failure messages: "nothing answered on 3443, 3000, 8080" versus "HTTPS answered,
+         but the app does not know the certificate".
+       * No address hardcoded any more: `Config.DEFAULT_URL` is a bare example host, the ports are
+         constants in `Discover` used by the buttons and by the search.
+       * Measured: searching `127.0.0.1` finds Open WebUI on 3000 (HTTPS 3443 is refused because the
+         certificate names the LAN address, the app notices and falls back); searching the home host with
+         the LAN CA in the trust store finds `https://…:3443` after one request; with 3443 and 3000
+         blocked it finds the model server `http://127.0.0.1:8080` in direct mode.
 - current `main` (after 1.8.1) – Interface language: English became the default interface
   language, German is now a translation overlay.
   * `res/values/strings.xml` holds 175 English texts (labels, buttons, hints, toasts, every error
@@ -118,6 +139,7 @@ Project: this repository.
 | 1.8 | Voice conversation listens again after the answer: one stage at a time in `VoiceFlow.java` instead of a "still running" flag | `Test.voiceFlowTests()` (21 checks) |
 | 1.8.1 | Public build: no LAN CA inside the APK (`OWUI_NO_CA=1`), different signing key than 1.0 – 1.8 (uninstall the old version first), APKs distributed as GitHub releases, documentation neutralised (example address only) | release notes |
 | current main | Interface language: English default (`res/values`), German as overlay (`res/values-de`), build profiles `OWUI_PUBLIC=1` / default | `Test.languageTests()` |
+| 1.9 | Login: type the host only, the app finds protocol, port and mode (3443 -> 3000 -> 8080); three port buttons instead of four hardcoded addresses; no address hardcoded in the code | `Discover.java`, `Test.discoverTests()`, live `Test.discoverLive()` |
 
 ## Open voice items
 

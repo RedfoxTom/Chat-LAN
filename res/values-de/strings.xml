@@ -102,10 +102,12 @@
     <string name="search_help_message">Der Knopf in der Eingabezeile schaltet zwischen Aus und An um. Gesucht wird über die lokale Suchmaschine auf deinem Server; die gefundenen Seiten werden selbst gelesen, die Antwort nennt dann die Preise, Temperaturen oder Daten daraus. Die Fundstellen stehen als Links unter der Nachricht.</string>
     <string name="setting_read_note">Vorgelesen wird nur bei der Sprach-Unterhaltung (grüner Knopf). Bei Diktat und getippten Fragen bleibt die App still – einzelne Antworten lassen sich über langes Drücken auf die Nachricht vorlesen.</string>
     <string name="login_tagline">Open WebUI oder OpenAI-kompatible API – im WLAN, LAN oder VPN</string>
-    <string name="login_server">SERVER</string>
-    <string name="login_preset_https">192.168.1.20:3443   Open WebUI (HTTPS)</string>
-    <string name="login_preset_http">192.168.1.20:3000   Open WebUI (HTTP)</string>
-    <string name="login_preset_direct">192.168.1.20:8080   Modell-Server direkt</string>
+    <string name="login_server">SERVER-ADRESSE</string>
+    <string name="login_auto_note">Gib nur die Adresse deines Rechners im Netz ein, zum Beispiel 192.168.1.20 — die App versucht zuerst HTTPS 3443, danach 3000 und 8080, und behält die Adresse, die antwortet. Mikrofon und Sprach-Unterhaltung brauchen HTTPS.</string>
+    <string name="login_force_ports">oder einen Port erzwingen</string>
+    <string name="login_preset_https">HTTPS 3443</string>
+    <string name="login_preset_http">HTTP 3000</string>
+    <string name="login_preset_direct">DIREKT 8080</string>
     <string name="login_access">ZUGANG</string>
     <string name="login_mode_webui">Open-WebUI-Login</string>
     <string name="login_mode_apikey">API-Key / direkt</string>
@@ -116,7 +118,14 @@
     <string name="login_trust_tls">TLS-Zertifikat ungeprüft akzeptieren (nur in vertrauenswürdigen Netzen)</string>
     <string name="login_connect">Verbinden</string>
     <string name="login_footnote">Chat LAN – gebaut für dieses Netzwerk</string>
-    <string name="login_need_url">Bitte Server-Adresse angeben, zum Beispiel https://192.168.1.20:3443</string>
+    <string name="login_need_url">Bitte die Adresse deines Servers angeben, zum Beispiel 192.168.1.20</string>
+    <string name="login_need_host">Gib zuerst die Adresse deines Servers an, zum Beispiel 192.168.1.20.</string>
+    <string name="login_searching">Die App sucht den Server …</string>
+    <string name="login_found_webui">Gefunden: Open WebUI auf %1$s</string>
+    <string name="login_found_direct">Gefunden: Modell-Server auf %1$s</string>
+    <string name="login_found_http_hint">ohne HTTPS: Chatten geht, Mikrofon und Sprach-Unterhaltung nicht</string>
+    <string name="login_detect_failed">Auf %1$s hat auf Port 3443, 3000 und 8080 nichts geantwortet. Prüfe die Adresse oder drücke einen der Port-Knöpfe.</string>
+    <string name="login_detect_tls">Auf %1$s hat HTTPS geantwortet, aber die App kennt das Zertifikat nicht. Lege das Zertifikat deines Netzes beim Bauen in assets/ca.crt, oder hake unten das Kästchen an und drücke erneut Verbinden.</string>
     <string name="login_need_email">Für den Open-WebUI-Login brauchst du E-Mail und Passwort.</string>
     <string name="login_models_count">%1$d Modelle verbunden</string>
     <string name="login_no_models_message">Der Server nennt keine Modelle. Prüfe die Adresse: Open WebUI läuft über Port 3443/3000, der Modell-Server direkt über Port 8080.</string>
@@ -183,5 +192,5 @@
     <string name="logo">Logo</string>
     <string name="chats">Chats</string>
     <string name="quality_default">832</string>
-    <string name="example_url">https://192.168.1.20:3443</string>
+    <string name="example_url">192.168.1.20</string>
 </resources>

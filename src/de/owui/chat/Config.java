@@ -7,8 +7,11 @@ import android.content.SharedPreferences;
 public class Config {
     public static final String MODE_OWUI = "owui";
     public static final String MODE_DIRECT = "direct";
-    /** Beispielwert, keine echte Maschine: im eigenen Netz anpassen (siehe README). */
-    public static final String DEFAULT_URL = "https://192.168.1.20:3443";
+    /**
+     * Beispielwert, keine echte Maschine: nur der Host, ohne Protokoll und Port.
+     * Die App sucht beim Verbinden selbst, welcher Port passt (siehe Discover).
+     */
+    public static final String DEFAULT_URL = "192.168.1.20";
 
     public String baseUrl;
     public String mode;

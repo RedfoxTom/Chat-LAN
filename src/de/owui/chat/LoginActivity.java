@@ -12,6 +12,7 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -56,21 +57,9 @@ public class LoginActivity extends Activity {
         if (Config.MODE_DIRECT.equals(cfg.mode)) modeKey.setChecked(true);
         syncFields();
 
-        findViewById(R.id.presetOwui).setOnClickListener(v -> {
-            url.setText("https://192.168.1.20:3443");
-            modeOwui.setChecked(true);
-            syncFields();
-        });
-        findViewById(R.id.presetOwuiHttp).setOnClickListener(v -> {
-            url.setText("http://192.168.1.20:3000");
-            modeOwui.setChecked(true);
-            syncFields();
-        });
-        findViewById(R.id.presetDirect).setOnClickListener(v -> {
-            url.setText("http://192.168.1.20:8080");
-            modeKey.setChecked(true);
-            syncFields();
-        });
+        findViewById(R.id.presetOwui).setOnClickListener(v -> applyPort("https", Discover.PORT_TLS, false));
+        findViewById(R.id.presetOwuiHttp).setOnClickListener(v -> applyPort("http", Discover.PORT_OWUI, false));
+        findViewById(R.id.presetDirect).setOnClickListener(v -> applyPort("http", Discover.PORT_DIRECT, true));
         findViewById(R.id.modeGroup).setOnClickListener(v -> syncFields());
         modeOwui.setOnClickListener(v -> syncFields());
         modeKey.setOnClickListener(v -> syncFields());
@@ -88,42 +77,104 @@ public class LoginActivity extends Activity {
         keyFields.setVisibility(owui ? View.GONE : View.VISIBLE);
     }
 
+    /** Preset-Zeile: nimmt den Host aus dem Feld und setzt darauf nur Protokoll und Port. */
+    private void applyPort(String scheme, int port, boolean direct) {
+        String host = Discover.hostOf(url.getText().toString());
+        if (host.isEmpty()) {
+            fail(getString(R.string.login_need_host));
+            return;
+        }
+        url.setText(Discover.address(host, scheme, port));
+        if (direct) modeKey.setChecked(true);
+        else modeOwui.setChecked(true);
+        syncFields();
+    }
+
+    /** Dem Nutzer zeigen, was die Suche gefunden hat, und die Felder darauf stellen. */
+    private void announceFound(final String target, final boolean owui) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                url.setText(target);
+                if (owui) modeOwui.setChecked(true);
+                else modeKey.setChecked(true);
+                syncFields();
+                if (owui && target.startsWith("http://")) {
+                    /* Ohne TLS geht das Mikrofon nicht - das soll nicht still passieren. */
+                    status.setText(getString(R.string.login_found_webui, target)
+                            + "  \u2013  " + getString(R.string.login_found_http_hint));
+                } else {
+                    status.setText(getString(owui
+                            ? R.string.login_found_webui : R.string.login_found_direct, target));
+                }
+                status.setTextColor(Util.color(0xFF3FA66A));
+            }
+        });
+    }
+
     private void connect() {
         if (busy) return;
-        String base = url.getText().toString().trim();
-        if (base.isEmpty()) {
+        final String typed = url.getText().toString().trim();
+        final String host = Discover.hostOf(typed);
+        if (host.isEmpty()) {
             fail(getString(R.string.login_need_url));
             return;
         }
-        if (!base.startsWith("http://") && !base.startsWith("https://")) base = "https://" + base;
-
-        final boolean owui = modeOwui.isChecked();
+        /* Ohne Port in der Eingabe sucht die App Protokoll, Port und Modus selbst. */
+        final boolean searchPorts = Discover.needsSearch(typed);
+        final boolean owuiWanted = modeOwui.isChecked();
         final String em = email.getText().toString().trim();
         final String pw = pass.getText().toString();
         final String key = apiKey.getText().toString().trim();
-        if (owui && (em.isEmpty() || pw.isEmpty())) {
-            fail(getString(R.string.login_need_email));
-            return;
-        }
 
         busy = true;
         connect.setEnabled(false);
-        status.setText(getString(R.string.connecting));
+        status.setText(getString(searchPorts ? R.string.login_searching : R.string.connecting));
         status.setTextColor(Util.color(0xFF9A9A92));
 
-        final String target = base;
         worker.execute(new Runnable() {
             @Override
             public void run() {
                 try {
-                    cfg.baseUrl = target;
-                    cfg.mode = owui ? Config.MODE_OWUI : Config.MODE_DIRECT;
                     cfg.allowAnyCert = insecure.isChecked();
                     cfg.token = "";
                     cfg.apiKey = "";
 
-                    Api api = new Api(LoginActivity.this, cfg);
+                    final Api api = new Api(LoginActivity.this, cfg);
+
+                    String target;
+                    boolean owui;
+                    if (searchPorts) {
+                        Discover.Report report = Discover.search(host, new Discover.Fetch() {
+                            @Override
+                            public Discover.Answer get(String absolute) throws IOException {
+                                return api.probeAbsolute(absolute);
+                            }
+                        });
+                        if (report.found == null) {
+                            throw new IOException(report.tlsBlocked
+                                    ? getString(R.string.login_detect_tls, host)
+                                    : getString(R.string.login_detect_failed, host));
+                        }
+                        target = report.found.baseUrl;
+                        owui = report.found.isWebUi();
+                        announceFound(target, owui);
+                    } else {
+                        int port = Discover.portOf(typed);
+                        String scheme = typed.indexOf("://") >= 0
+                                ? typed.substring(0, typed.indexOf("://"))
+                                : (owuiWanted ? "https" : "http");
+                        target = Discover.address(host, scheme, port);
+                        owui = owuiWanted;
+                    }
+
+                    cfg.baseUrl = target;
+                    cfg.mode = owui ? Config.MODE_OWUI : Config.MODE_DIRECT;
+
                     if (owui) {
+                        if (em.isEmpty() || pw.isEmpty()) {
+                            throw new IOException(getString(R.string.login_need_email));
+                        }
                         Map<String, Object> acc = api.signIn(em, pw);
                         Object t = acc.get("token");
                         if (t == null) throw new Api.ApiException(200, getString(R.string.err_login_no_token));

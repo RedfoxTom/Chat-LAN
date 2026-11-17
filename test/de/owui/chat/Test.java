@@ -35,6 +35,7 @@ public class Test {
         routerTests();
         voiceFlowTests();
         searchTests();
+        discoverTests();
         languageTests();
         dbTests();
 
@@ -50,6 +51,9 @@ public class Test {
 
         System.out.println("\n== Live: Modell-Server direkt 127.0.0.1:8080 ==");
         directLive();
+
+        System.out.println("\n== Live: Server-Suche 127.0.0.1 (Port und Modus selbst finden) ==");
+        discoverLive();
 
         System.out.println(failed == 0 ? "\nALLE TESTS BESTANDEN" : "\nFEHLER: " + failed);
         if (failed > 0) System.exit(1);
@@ -502,6 +506,145 @@ public class Test {
                     .append("\",\"title\":\"Seite ").append(i).append("\",\"snippet\":\"Text ").append(i).append("\"}");
         }
         return b.append("]}").toString();
+    }
+
+    /* ------------------------------------------------ Server-Suche */
+
+    /** Pruefkopf: liefert gespeicherte Antworten und kann TLS-Probleme vorspielen. */
+    static class FakeFetch implements Discover.Fetch {
+        final java.util.Map<String, Discover.Answer> answers = new java.util.HashMap<String, Discover.Answer>();
+        final java.util.List<String> tlsBlocked = new java.util.ArrayList<String>();
+        int calls;
+
+        void put(String url, int status, String body) {
+            answers.put(url, new Discover.Answer(status, body));
+        }
+
+        void tls(String url) {
+            tlsBlocked.add(url);
+        }
+
+        public Discover.Answer get(String url) throws IOException {
+            calls++;
+            if (tlsBlocked.contains(url)) throw new javax.net.ssl.SSLHandshakeException("playing: certificate unknown");
+            Discover.Answer a = answers.get(url);
+            if (a != null) return a;
+            throw new java.net.ConnectException("playing: nothing listens on " + url);
+        }
+    }
+
+    static void discoverTests() {
+        System.out.println("== Server-Suche (Host ohne Port) ==");
+        String owuiBody = "{\"version\":\"0.13.3\",\"deployment_id\":\"\"}";
+        String strataBody = "{\"object\": \"list\", \"data\": [{\"id\": \"qwen3.8-flash-next-iq3_xxs\"}]}";
+        String htmlBody = "<!doctype html><html lang=\"en\"><head><title>Open WebUI</title></head><body></body></html>";
+
+        ok("hostOf ohne alles", "192.168.1.20".equals(Discover.hostOf("192.168.1.20")));
+        ok("hostOf mit Protokoll", "192.168.1.20".equals(Discover.hostOf("https://192.168.1.20:3443")));
+        ok("hostOf mit Pfad", "server.local".equals(Discover.hostOf("http://server.local:3000/api/version")));
+        ok("hostOf mit Port ohne Protokoll", "10.0.0.9".equals(Discover.hostOf("10.0.0.9:8080")));
+        ok("hostOf IPv6", "[::1]".equals(Discover.hostOf("http://[::1]:3000")));
+        ok("hostOf leer bei leerem Feld", Discover.hostOf("   ").isEmpty());
+
+        ok("portOf: keiner gesetzt", Discover.portOf("192.168.1.20") == -1);
+        ok("portOf: gesetzt", Discover.portOf("https://a.b:3443") == 3443);
+        ok("portOf: IPv6", Discover.portOf("http://[::1]:3000") == 3000);
+        ok("ohne Port wird gesucht", Discover.needsSearch("192.168.1.20"));
+        ok("mit Port wird nicht gesucht", !Discover.needsSearch("http://a.b:3000"));
+        ok("Preset-Adresse baut das Richtige",
+                "https://a.b:3443".equals(Discover.address("a.b", "https", Discover.PORT_TLS))
+                        && "http://a.b:8080".equals(Discover.address("a.b", "http", Discover.PORT_DIRECT)));
+
+        java.util.List<String> candidates = Discover.candidateUrls("a.b");
+        ok("Reihenfolge: HTTPS zuerst, dann WebUI, dann direkt",
+                candidates.size() == 3
+                        && candidates.get(0).equals("https://a.b:3443")
+                        && candidates.get(1).equals("http://a.b:3000")
+                        && candidates.get(2).equals("http://a.b:8080"));
+
+        /* Fall 1: HTTPS-Open-WebUI antwortet keylos -> Treffer, Modus owui. */
+        FakeFetch f1 = new FakeFetch();
+        f1.put("https://a.b:3443/api/version", 200, owuiBody);
+        Discover.Report r1 = Discover.search("a.b", f1);
+        ok("HTTPS-Open-WebUI gefunden", r1.found != null
+                && r1.found.baseUrl.equals("https://a.b:3443")
+                && r1.found.isWebUi());
+        ok("nach dem Treffer wird nicht weiter probiert", r1.tried.size() == 1);
+
+        /* Fall 2: Zertifikat unbekannt -> die App weicht auf HTTP 3000 aus. */
+        FakeFetch f2 = new FakeFetch();
+        f2.tls("https://a.b:3443/api/version");
+        f2.tls("https://a.b:3443/v1/models");
+        f2.put("http://a.b:3000/api/version", 200, owuiBody);
+        Discover.Report r2 = Discover.search("a.b", f2);
+        ok("TLS-Problem erkannt und gemerkt", r2.tlsBlocked);
+        ok("Ausweichen auf Open WebUI 3000", r2.found != null
+                && r2.found.baseUrl.equals("http://a.b:3000") && r2.found.isWebUi());
+
+        /* Fall 3: nur der Modell-Server (8080) antwortet -> Modus direkt. */
+        FakeFetch f3 = new FakeFetch();
+        f3.put("http://a.b:8080/api/version", 404, "{\"error\": {\"message\": \"not found\"}}");
+        f3.put("http://a.b:8080/v1/models", 200, strataBody);
+        Discover.Report r3 = Discover.search("a.b", f3);
+        ok("Modell-Server gefunden (direkter Modus)", r3.found != null
+                && r3.found.baseUrl.equals("http://a.b:8080") && r3.found.isDirect());
+
+        /* Falle: Open WebUI liefert auf /v1/models ohne Token die HTML-Seite der Weboberflaeche. */
+        FakeFetch f4 = new FakeFetch();
+        f4.put("http://a.b:3000/api/version", 404, htmlBody);
+        f4.put("http://a.b:3000/v1/models", 200, htmlBody);
+        Discover.Report r4 = Discover.search("a.b", f4);
+        ok("HTML auf /v1/models ist kein Modell-Server", r4.found == null);
+
+        /* Fall 4: nichts antwortet -> drei Adressen probiert, kein Treffer. */
+        FakeFetch f5 = new FakeFetch();
+        Discover.Report r5 = Discover.search("a.b", f5);
+        ok("nichts gefunden, aber alle Ports probiert",
+                r5.found == null && r5.tried.size() == 3 && !r5.tlsBlocked);
+
+        ok("leerer Host sucht nichts", Discover.search("", new FakeFetch()).found == null);
+        ok("Erkennungsregel: JSON mit version ist Open WebUI",
+                Discover.looksLikeWebUi(new Discover.Answer(200, owuiBody))
+                        && !Discover.looksLikeWebUi(new Discover.Answer(404, owuiBody)));
+        ok("Erkennungsregel: JSON-Modelliste ist Modell-Server",
+                Discover.looksLikeModelServer(new Discover.Answer(200, strataBody))
+                        && !Discover.looksLikeModelServer(new Discover.Answer(200, htmlBody)));
+    }
+
+    /** Echte Suche gegen die eigenen Server: 127.0.0.1 muss Open WebUI auf 3000 liefern. */
+    static void discoverLive() throws Exception {
+        Discover.Fetch fetch = new Discover.Fetch() {
+            public Discover.Answer get(String url) throws IOException {
+                java.net.HttpURLConnection c = (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
+                c.setRequestMethod("GET");
+                c.setConnectTimeout(4000);
+                c.setReadTimeout(8000);
+                try {
+                    int code = c.getResponseCode();
+                    java.io.InputStream in = code >= 400 ? c.getErrorStream() : c.getInputStream();
+                    java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+                    if (in != null) {
+                        byte[] buf = new byte[4096];
+                        int n;
+                        while ((n = in.read(buf)) > 0) {
+                            bos.write(buf, 0, n);
+                            if (bos.size() > 200000) break;
+                        }
+                        in.close();
+                    }
+                    return new Discover.Answer(code, new String(bos.toByteArray(), "UTF-8").trim());
+                } finally {
+                    c.disconnect();
+                }
+            }
+        };
+        Discover.Report rep = Discover.search("127.0.0.1", fetch);
+        System.out.println("    probiert: " + rep.tried);
+        if (rep.found != null) System.out.println("    gefunden: " + rep.found.baseUrl + "  modus=" + rep.found.mode);
+        ok("Suche findet Open WebUI auf 127.0.0.1", rep.found != null && rep.found.isWebUi());
+        ok("Suche trifft den Open-WebUI-Port 3000",
+                rep.found != null && rep.found.baseUrl.endsWith(":" + Discover.PORT_OWUI));
+        ok("Suche haelt keinen Modell-Server fuer Open WebUI", rep.found != null && !rep.found.isDirect());
     }
 
     /* ------------------------------------------------ Open WebUI live */
