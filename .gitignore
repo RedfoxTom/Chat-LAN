@@ -1,0 +1,12 @@
+# Build-Arbeit
+build/
+*.apk
+*.apk.idsig
+*.class
+
+# Persönliches / Geheimnisse
+test/.secrets.json
+assets/ca.crt
+test/assets/ca.crt
+__pycache__/
+*.log

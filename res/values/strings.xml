@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Chat LAN</string>
+    <string name="new_chat">Neuer Chat</string>
+    <string name="settings">Einstellungen</string>
+    <string name="logout">Abmelden</string>
+    <string name="connecting">Verbinde…</string>
+    <string name="ask">Frag etwas…</string>
+</resources>

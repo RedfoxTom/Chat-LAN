@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/bg_chat</item>
+        <item name="android:colorPrimary">@color/bg_chat</item>
+        <item name="android:colorPrimaryDark">@color/bg_side</item>
+        <item name="android:colorAccent">@color/accent</item>
+        <item name="android:statusBarColor">@color/bg_chat</item>
+        <item name="android:navigationBarColor">@color/bg_chat</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:textColorHint">@color/text_faint</item>
+    </style>
+
+    <style name="ChatText">
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:lineSpacingMultiplier">1.25</item>
+    </style>
+
+    <style name="ComposerEdit" parent="@android:style/Widget.Material.EditText">
+        <item name="android:background">@drawable/bg_composer</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">12dp</item>
+        <item name="android:paddingLeft">16dp</item>
+        <item name="android:paddingRight">16dp</item>
+        <item name="android:hint">@string/ask</item>
+    </style>
+
+    <style name="FieldPlain" parent="@android:style/Widget.Material.EditText">
+        <item name="android:background">@drawable/bg_field</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:padding">12dp</item>
+    </style>
+
+    <style name="SideItem">
+        <item name="android:textSize">15sp</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:padding">14dp</item>
+    </style>
+</resources>

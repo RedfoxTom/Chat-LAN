@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg_chat">#212121</color>
+    <color name="bg_side">#171717</color>
+    <color name="bg_user">#353740</color>
+    <color name="bg_composer">#303030</color>
+    <color name="bg_hover">#2F2F2F</color>
+    <color name="bg_code">#2B2B2B</color>
+    <color name="text_primary">#ECECE4</color>
+    <color name="text_secondary">#9A9AA8</color>
+    <color name="text_faint">#707078</color>
+    <color name="divider">#2E2E2E</color>
+    <color name="accent">#10A37F</color>
+    <color name="danger">#E5484D</color>
+    <color name="ghost">#1FFFFFFF</color>
+</resources>
