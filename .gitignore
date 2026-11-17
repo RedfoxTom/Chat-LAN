@@ -1,10 +1,10 @@
-# Build-Arbeit
+# Build work
 build/
 *.apk
 *.apk.idsig
 *.class
 
-# Persönliches / Geheimnisse
+# Personal / secrets
 test/.secrets.json
 assets/ca.crt
 test/assets/ca.crt

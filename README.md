@@ -1,128 +1,123 @@
 # Chat LAN
 
-[Deutsch](README.md) · [English](README.en.md)
+Native Android client for a **self-hosted** Open WebUI (or for any OpenAI-compatible
+model server) – no cloud, no third-party servers, everything stays on your own network.
 
-Nativer Android-Client für ein **lokales** Open WebUI (oder direkt für jeden
-OpenAI-kompatiblen Modellserver) – ohne Cloud, ohne fremde Server, alles im eigenen Netz.
+No React/Capacitor, no Gradle: a small native Android app in Java, built with
+`aapt2` + `javac` + `d8` + `apksigner`. The APK is about 160 kB and runs on Android 8
+(API 26) or newer.
 
-Kein React/Capacitor, kein Gradle: eine kleine native Android-App in Java, gebaut mit
-`aapt2` + `javac` + `d8` + `apksigner`. APK ~160 kB, läuft ab Android 8 (API 26).
+## What the app does
 
-**EN:** Native Android client for a **self-hosted** Open WebUI (or any OpenAI-compatible
-model server) – no cloud, no third-party servers, everything on your own network. Plain
-Java, built with `aapt2` + `javac` + `d8` + `apksigner`, no React/Capacitor and no Gradle.
-APK ~160 kB, Android 8 (API 26) and newer. Full English documentation:
-[README.en.md](README.en.md).
-
-## Was die App kann
-
-| Bereich | Wie |
+| Area | How |
 |---|---|
-| Chat | Open WebUI (`/api/chat/completions`) oder direkt (`/v1/chat/completions`), Streaming, Systemprompt, Temperatur, Historie in SQLite |
-| Bilder | ComfyUI über Open WebUI (Workflow und Bild-Modell in den Einstellungen), Größen 832 / 1024 / 1280, Antwortbilder klickbar |
-| Vision | Bild anhängen, Modell antwortet darauf |
-| Diktat | `POST /v1/audio/transcriptions` (Whisper, `language=de`) oder die Telefon-Spracheingabe als Fallback |
-| Sprach-Unterhaltung | Aufnahme → Verstehen → Antworten → Vorlesen, Gesprächsmodus mit Stufenanzeige (`VoiceFlow.java`) |
-| Sprachausgabe | `POST /api/v1/audio/speech` (edge-tts über Open WebUI), 7 Stimmen zur Auswahl (de / AT / CH), Hörprobe in den Einstellungen |
-| Websuche | `POST /api/v1/retrieval/process/web/search` (Open WebUI → SearXNG), Fundstellen als Systemblock ans Modell, klickbare Quellzeilen unter der Antwort |
-| Markdown | Fette Absätze, Listen, Zitate, Codeblöcke – selbst gerendert, keine Bibliothek |
+| Chat | Open WebUI (`/api/chat/completions`) or direct (`/v1/chat/completions`), streaming, system prompt, temperature, history in SQLite |
+| Images | ComfyUI through Open WebUI (workflow and image model chosen in the settings), sizes 832 / 1024 / 1280, images in replies are tappable |
+| Vision | Attach an image, the model answers about it |
+| Dictation | `POST /v1/audio/transcriptions` (Whisper, `language=de`), or the phone's own speech input as a fallback |
+| Voice conversation | Record → understand → think → answer → read aloud, conversation mode with a stage indicator (`VoiceFlow.java`) |
+| Text to speech | `POST /api/v1/audio/speech` (edge-tts through Open WebUI), 7 voices to choose from (de / AT / CH), preview in the settings |
+| Web search | `POST /api/v1/retrieval/process/web/search` (Open WebUI → SearXNG); the found pages are handed to the model as a system block and shown as clickable source lines under the answer |
+| Markdown | Bold paragraphs, lists, quotes, code blocks – rendered by hand, no library |
 
-Bewusst **nicht** eingebaut: ein echter Realtime-Voice-Call (läuft über Cloud-Dienste).
-Voice ist hier ASR → Chat → TTS, damit alles im Netz bleibt.
+Deliberately **not** built in: a real realtime voice call (that runs through cloud
+services). Voice here is ASR → chat → TTS, so everything stays in your own network.
 
-## Bauen
+The app interface itself is German.
 
-Werkzeugkasten (kein Gradle, kein Android Studio nötig):
+## Building
+
+The toolbox (no Gradle, no Android Studio needed):
 
 ```
-JDK 17 oder neuer            -> javac, keytool
+JDK 17 or newer              -> javac, keytool
 Android SDK:
   build-tools/34.0.0         -> aapt2, d8, zipalign, apksigner
   platforms/android-34       -> android.jar
-python3                      -> dex in die APK einfügen
+python3                      -> injects the dex into the APK
 ```
 
 ```bash
-export JAVA_HOME=/pfad/zur/jdk          # Standard: $HOME/tools/owui-android/jdk
-export ANDROID_HOME=/pfad/zum/sdk       # Standard: $HOME/Android/Sdk
-cd chat-lan
-bash build.sh                            # -> build/apk/owui-chat.apk
+export JAVA_HOME=/path/to/jdk          # default: $HOME/tools/owui-android/jdk
+export ANDROID_HOME=/path/to/sdk       # default: $HOME/Android/Sdk
+cd Chat-LAN
+bash build.sh                          # -> build/apk/owui-chat.apk
 ```
 
-Beim ersten Lauf legt `build.sh` ein Signier-Keystore an (`build/owui-release.keystore`) und
-schreibt sein Passwort in `build/owui-release.keystore.pass`. Keystore und Passwort liegen
-nicht im Repository. **Beides sichern** – ohne sie sind künftige Versionen keine Updates
-mehr, sondern nur als Neuinstallation verteilbar. Ein selbst gebauter APK hat
-ausserdem einen anderen Schlüssel als die veröffentlichten Releases: vor der Installation
-die Release-App vom Telefon entfernen, sonst will Android beide nebeneinander nicht.
+On its first run `build.sh` creates a signing keystore (`build/owui-release.keystore`) and
+writes its password to `build/owui-release.keystore.pass`. Neither the keystore nor the
+password is in the repository. **Back both of them up** – without them future versions are
+no longer updates but only installable as a fresh installation. A self-built APK also has a
+different key than the published releases: remove the release app from the phone before
+installing your own build, otherwise Android will not accept both side by side.
 
-LAN-CA für HTTPS (optional, siehe `assets/README.txt`):
+LAN CA for HTTPS (optional, see `assets/README.txt`):
 
 ```bash
-cp /pfad/zu/deiner-lan-ca.crt assets/ca.crt
+cp /path/to/your-lan-ca.crt assets/ca.crt
 ```
 
-## Testen
+## Testing
 
-Ein großer Teil der Logik (Markdown, ChatML, Token-Kürzung, JSON, Router, Suchregeln,
-`VoiceFlow`) ist bewusst frei von Android-APIs und läuft deshalb auf normaler JVM –
-die Android-Klassen für diese Tests liegen in `test/android/`.
+A large part of the logic (markdown, ChatML, token trimming, JSON, router, search rules,
+`VoiceFlow`) is deliberately free of Android APIs and therefore runs on a plain JVM – the
+Android classes needed for those tests live in `test/android/`.
 
 ```bash
-export JAVA_HOME=/pfad/zur/jdk
+export JAVA_HOME=/path/to/jdk
 export PATH="$JAVA_HOME/bin:$PATH"
 javac -d build/jvm $(find src test -name '*.java' \
         | grep -v -e MainActivity -e LoginActivity -e '/Voice.java' -e '/Recorder.java')
-java -cp build/jvm de.owui.chat.Test offline     # ohne Server, 130+ Prüfungen
-OWUI_TOKEN=... java -cp build/jvm de.owui.chat.Test live   # gegen den echten Server
+java -cp build/jvm de.owui.chat.Test offline     # no server, 130+ checks
+OWUI_TOKEN=... java -cp build/jvm de.owui.chat.Test live   # against the real server
 ```
 
-`live` braucht `OWUI_TOKEN` (und optional `OWUI_EMAIL`) aus der Umgebung. Ein Token liegt
-nie im Repository.
+`live` needs `OWUI_TOKEN` (and optionally `OWUI_EMAIL`) from the environment. A token is
+never in the repository.
 
-## Gegenstück auf dem Server
+## Counterpart on the server
 
-Die App setzt ein Open WebUI (oder einen reinen Modellserver) im Netz voraus. Für
-funktionierende **Websuche mit Seitentext** (nicht nur Snippets) sind diese Einstellungen nötig:
+The app expects an Open WebUI (or a plain model server) on the network. For a **web search
+that really returns page text** (not just snippets) these settings are needed:
 
 ```
-web.search.bypass_embedding_and_retrieval = True   # Seiten kommen als docs zurück
-web.search.bypass_web_loader             = False   # Seiten werden wirklich geladen
+web.search.bypass_embedding_and_retrieval = True   # pages come back as docs
+web.search.bypass_web_loader             = False   # pages are actually fetched
 web.search.result_count                  = 5
 ```
 
-Ohne `bypass_embedding_and_retrieval` landen die Seiten nur in einer Vektorsammlung und
-die App sieht bloß Snippets – Preis- und Wetterfragen gehen dann daneben. Prüfen:
+Without `bypass_embedding_and_retrieval` the pages only end up in a vector collection and
+the app sees nothing but snippets – price and weather questions then go wrong. Check with:
 
 ```
 GET /api/v1/configs/namespace/web.search
 ```
 
-## Anmelden in der App
+## Signing in to the app
 
-| Modus | Adresse |
+| Mode | Address |
 |---|---|
-| Open WebUI | `https://<server>:3443` (HTTPS durch eigene CA) oder `http://<server>:3000` |
-| Direkt (OpenAI-kompatibel) | `http://<server>:8080/v1` – kein Login, kein API-Key nötig |
+| Open WebUI | `https://<server>:3443` (HTTPS through your own CA) or `http://<server>:3000` |
+| Direct (OpenAI-compatible) | `http://<server>:8080/v1` – no login, no API key needed |
 
-`Config.DEFAULT_URL` und die drei Vorschläge der Anmeldemaske stehen auf einem Beispielwert
-(`192.168.1.20`, Ports 3443 / 3000 / 8080) – eine erfundene Adresse, kein reales Netz.
-Anpassen: Standardwert in `src/de/owui/chat/Config.java`, Vorschläge in
+`Config.DEFAULT_URL` and the three suggestions in the login screen are set to an example
+value (`192.168.1.20`, ports 3443 / 3000 / 8080) – an invented address, not a real network.
+To change it: the default in `src/de/owui/chat/Config.java`, the suggestions in
 `res/layout/activity_login.xml`.
 
-## APK herunterladen
+## Downloading the APK
 
-Fertige APKs liegen unter [Releases](../../releases). Die öffentlichen APKs werden mit
-`OWUI_NO_CA=1` gebaut (keine LAN-CA in der APK) und mit dem öffentlichen Schlüssel
-`build/owui-public.keystore` signiert. Wer stattdessen selbst mit dem eigenen Schlüssel baut
-(`bash build.sh`, mit `assets/ca.crt`), muss die Vorgängerversion vor der Installation
-deinstallieren – verschiedene Signaturen lassen kein Update zu.
+Ready-made APKs are under [Releases](https://github.com/RedfoxTom/Chat-LAN/releases). The
+public APKs are built with `OWUI_NO_CA=1` (no LAN CA inside the APK) and signed with the
+public key `build/owui-public.keystore`. If you instead build with your own key
+(`bash build.sh`, with `assets/ca.crt`), you have to uninstall the previous version before
+installing – different signatures do not allow an update.
 
-## Versionen
+## Versions
 
-`ROADMAP.md` führt die einzelnen Versionen mit dem Fehler, der dahinter repariert wurde,
-und dem Test, der ihn abfängt.
+`ROADMAP.md` lists every version with the bug that was fixed behind it and the test that
+catches it.
 
-## Lizenz
+## Licence
 
-MIT – siehe `LICENSE`.
+MIT – see `LICENSE`.

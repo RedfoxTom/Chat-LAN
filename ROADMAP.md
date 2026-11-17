@@ -1,128 +1,120 @@
 # Chat LAN – Roadmap
 
-Projekt: dieses Repository
+Project: this repository.
 
-> **EN – short version of the history below** (the detailed log stays German; the app
-> documentation in English is [README.en.md](README.en.md)):
->
-> | Version | Fixed / added | Guarded by |
-> |---|---|---|
-> | 1.0 – 1.3 | Base: chat, images, compression, TTS, dictation, vision, quality | `Test` suite |
-> | 1.4 | Image mode stops talking: voice button hidden in image mode, a running voice round ends on model switch, image replies are never read aloud | `Router.java`, `Test.routerTests()` |
-> | 1.5 | Web search (off / auto / on) and voice selection | `Search.java` |
-> | 1.6 | Web search reduced to off / on, and it really reads the pages (`bypass_embedding_and_retrieval=True` on the server) | live price-search check in `Test.liveTests()` |
-> | 1.7 | Voices fixed: "male and female sound the same" – Katja/Conrad are aliases of Tanja/Christoph, so `de-DE` only has two real voices; now 3 female + 3 male (de / AT / CH) | byte-comparison test per voice |
-> | 1.8 | Voice conversation listens again after the answer: one stage at a time in `VoiceFlow.java` instead of a "still running" flag | `Test.voiceFlowTests()` (21 checks) |
-> | 1.8.1 | Public build: no LAN CA inside the APK (`OWUI_NO_CA=1`), different signing key than 1.0 – 1.8 (uninstall the old version first), APKs distributed as GitHub releases, documentation neutralised (example address only) | release notes |
+## Versions (distributed as GitHub releases)
 
-## Versionen (verteilt über GitHub-Releases)
-
-- 1.0 – 1.3  Basis: Chat, Bilder, Kompression, TTS, Diktat, Vision, Qualität
-- 1.4  Bild-Modus ohne Sprach-Chat: Unterhaltungs-Knopf verschwindet im Bild-Modus,
-       laufende Sprachrunde endet beim Modellwechsel, Bild-Antworten werden nie vorgelesen
-       (Regeln in `src/de/owui/chat/Router.java`, abgesichert in `Test.routerTests()`)
-- 1.5  Websuche und Stimmauswahl (Stand 17.11.2026; Websuche-Knopf in 1.6 vereinfacht):
-       * Websuche-Knopf im Eingabefeld: Aus / Auto / An. Auto sucht bei Wetter, Preisen,
-         News, Terminen, Öffi-Öffnungszeiten – Regeln und Suchbegriff-Bildung in
-         `src/de/owui/chat/Search.java`, gesucht wird über
-         `POST /api/v1/retrieval/process/web/search` (OpenWebUI → `searxng-local`).
-         Die Fundstellen gehen als Systemblock ans Modell und stehen als klickbare
-         Quellzeilen unter der Antwort (in SQLite als Anhang `text/uri-list`).
-       * Stimmauswahl in den Einstellungen: Server-Standard / Tanja / Katja / Christoph /
-         Conrad. Die App schickt dann `voice` mit; live verifiziert, dass OpenWebUI den
-         Wert an `openai-edge-tts` durchreicht. Auswahl wird sofort gespeichert und ist als
-         Hörprobe gleich zu hoeren. (In 1.7 ersetzt: diese Liste enthielt nur zwei echte
-         Stimmen, siehe 1.7.)
-- 1.6  Websuche nur noch Aus/An, und sie liest die Seiten wirklich (Stand 17.11.2026,
-       gebaut, getestet, verteilt als GitHub-Release owui-chat-1.6.apk):
-       * Ein Druck auf den Knopf schaltet um (Aus <-> An), Farbe und Text zeigen den Zustand,
-         langes Drücken erklärt. Kein "Auto" mehr, kein Hinweis-Dialog statt Funktion.
-       * Entscheidend war die Server-Einstellung (Namespace `web.search`, prüfen mit
+- 1.0 – 1.3  Base: chat, images, context compression, TTS, dictation, vision, quality
+             (guarded by the `Test` suite)
+- 1.4  Image mode stops talking: the conversation button disappears in image mode, a running
+       voice round ends on model switch, image replies are never read aloud
+       (rules in `src/de/owui/chat/Router.java`, guarded by `Test.routerTests()`)
+- 1.5  Web search and voice selection (as of 2026-11-17; the search button was simplified in 1.6):
+       * Web search button in the input field: off / auto / on. Auto searches for weather, prices,
+         news, appointments, public transport opening times – the rules and the query construction
+         live in `src/de/owui/chat/Search.java`, searching goes through
+         `POST /api/v1/retrieval/process/web/search` (Open WebUI → its SearXNG backend).
+         The found pages go to the model as a system block and stay available as clickable source
+         lines under the answer (stored in SQLite as an `text/uri-list` attachment).
+       * Voice selection in the settings: server default / Tanja / Katja / Christoph / Conrad.
+         The app then sends `voice`; verified live that Open WebUI passes the value on to
+         `openai-edge-tts`. The choice is saved immediately and can be heard right away as a
+         sample. (Replaced in 1.7: that list only contained two real voices, see 1.7.)
+- 1.6  Web search reduced to off / on, and it really reads the pages (built, tested, shipped as
+       the GitHub release owui-chat-1.6.apk):
+       * One tap toggles (off <-> on); colour and text show the state, a long press explains it.
+         No "auto" any more, no info dialog instead of a function.
+       * The decisive part was the server setting (namespace `web.search`, check with
          `GET /api/v1/configs/namespace/web.search`): `bypass_embedding_and_retrieval=True` –
-         dann gibt der Such-Endpoint die geladenen Seiten direkt als `docs` zurück; ohne dieses
-         Flag landen sie nur in einer Vektor-Sammlung und die App sieht bloß Snippets, das
-         Modell antwortet dann nur mit dem Hinweis auf Portale. Dazu `bypass_web_loader=False`
-         (Seiten werden wirklich geladen) und `result_count=5`. `web.fetch.max_content_length`
-         ist ungesetzt – die App begrenzt selbst: sie ordnet jeder Fundstelle ihren Seitentext
-         zu (`Search.parse` liest `items` + `docs`) und schickt einen Auszug von max. 2000
-         Zeichen, Zahlenzeilen zuerst, Menu-/Cookie-Zeilen hinten.
-       * Live verifiziert: Preissuche "Xiaomi 15T Pro Preis" -> 5 Fundstellen, 112192 Zeichen
-         Seitentext, Antwort "449,99 € – Clevertronic …". Kurzfragen wie "und mit 512 GB"
-         suchen jetzt mit dem Zusammenhang der vorigen Frage (`Search.queryWithContext`).
-       * Vorgelesen wird nur im Chat-Modus (grüner Knopf) und beim Diktat-Unterhaltungsmodus;
-         Diktat ohne Unterhaltung und getippte Fragen bleiben stumm. Einzelne Antworten lassen
-         sich weiter per langem Druck auf die Nachricht vorlesen.
+         the search endpoint then returns the loaded pages directly as `docs`; without that flag
+         they only end up in a vector collection and the app sees nothing but snippets, so the
+         model answers with a reference to portals. Plus `bypass_web_loader=False` (pages are
+         really fetched) and `result_count=5`. `web.fetch.max_content_length` is left unset – the
+         app limits it itself: it attaches each hit to its page text (`Search.parse` reads `items`
+         and `docs`) and sends an extract of at most 2000 characters, lines with numbers first,
+         menu and cookie lines last.
+       * Verified live: the price search "Xiaomi 15T Pro Preis" -> 5 hits, 112192 characters of
+         page text, answer "449,99 € – Clevertronic …". Short follow-up questions like "und mit
+         512 GB" now search using the context of the previous question (`Search.queryWithContext`).
+       * Read aloud only in chat mode (green button) and in the dictation conversation mode;
+         dictation without conversation and typed questions stay silent. Individual answers can
+         still be read aloud through a long press on the message.
+- 1.7  Voice fixed: "male and female sound the same" (built, tested, shipped as the GitHub
+       release owui-chat-1.7.apk):
+       * Cause: the list since 1.5 named four voices, but `de-DE-KatjaNeural` is the same voice as
+         `de-DE-TanjaNeural` and `de-DE-ConradNeural` the same as `de-DE-ChristophNeural` – same
+         text, exactly the same byte length, the first ~4.7 kB identical, curve correlation 1.00.
+         So `de-DE` only had two real voices; and the server default (`audio.tts.voice=de-DE-KatjaNeural`)
+         is female. edge-tts itself offers six voices for the German-speaking area.
+       * New: Tanja / Christoph (de), Ingrid / Jonas (AT), Leni / Jan (CH) – three female and three
+         male, labels show the language. Old stored Katja/Conrad values map to Tanja/Christoph
+         through `Config.LEGACY_VOICES`, unknown values stay on the server default. The sample now
+         says the voice name ("Christoph speaks."), and the settings show which voice is active.
+       * Bug fixed in the old spinner: `setSelection()` after the listener was registered silently
+         reset the stored voice when the screen opened; the selection is now set before the listener
+         and a `firstReport` guard ignores the first callback.
+       * Guarded by a live test: `Test.liveTests()` generates audio for every voice and checks the
+         longest common byte sequence (>200 identical bytes = the same voice) – it passes, as do the
+         other 130+ live checks.
+- 1.8  Voice conversation listens again after the answer (built, tested, shipped as the GitHub
+       release owui-chat-1.8.apk):
+       * Symptom: the answer arrived and was read aloud, after that the app no longer reacted to
+         voice, even though the conversation button was still green (mode on).
+       * Cause: `startVoiceTurn()` began with `if (voiceRunning || transcribing) return;`.
+         `voiceRunning` was set to true on the first press and only back to false on abort – the
+         re-entry after reading aloud called exactly that method, found true and returned
+         immediately. So nothing was recorded any more while the bar ("● Keep talking …") and the
+         button still showed "on". With the loop switched off ("one round only") the same state
+         stayed permanently.
+       * New: `src/de/owui/chat/VoiceFlow.java` holds exactly one stage at a time
+         (recording -> understanding -> thinking -> speaking -> pause), separate from the mode
+         (sessionOn). The mode is no longer tied to a "still running" switch: the pause after
+         reading aloud is its own transition and the next recording starts. MainActivity no longer
+         has the chatSession / voiceRunning / voiceAnswerPending fields.
+       * Rules guarded in `Test.voiceFlowTests()`: 21 checks, among them four rounds in a row,
+         "the pause does not block the new recording", "one round only", "an audio error ends the
+         round", "a transition from the wrong stage is ignored".
+       * Also: the button press is now defined per stage (stop recording / abort the round /
+         interrupt speaking / start listening); a sample or "read aloud" of a single message no
+         longer cuts into a running conversation (that was a second way into the same stuck state);
+         a 400 ms tail after reading aloud does not count as a separate statement; every stage
+         change is logged in logcat under "owui-voice" (`adb logcat -s owui-voice`) so such a case
+         can be followed on the phone.
+- 1.8.1  Public build, distribution changed (built, tested, shipped as the GitHub release
+       owui-chat-1.8.1.apk, versionCode 10):
+       * No LAN CA inside the APK any more: built with `OWUI_NO_CA=1`, `assets/ca.crt` is not
+         bundled. Every installation has its own CA – it does not belong in a public artefact.
+       * A different signing key than 1.0 – 1.8 (`CN=Chat LAN, O=chat-lan, C=DE`, the key lives
+         outside the repository). Uninstall the previous version before installing: Android rejects
+         an update over 1.8.
+       * Ready-made APKs are now GitHub releases instead of `https://<server>:3443/dl/`.
+       * Documentation neutralised: `Config.DEFAULT_URL` and the three suggestions in the login
+         screen use an example value – no real LAN addresses in the repository.
 
-- 1.7  Stimme gefixt: "maennlich und weiblich klingen gleich" (Stand 17.11.2026, gebaut,
-       getestet, verteilt als GitHub-Release owui-chat-1.7.apk):
-       * Ursache: die Auswahl seit 1.5 nannte vier Stimmen, aber `de-DE-KatjaNeural` ist
-         dieselbe Stimme wie `de-DE-TanjaNeural` und `de-DE-ConradNeural` dieselbe wie
-         `de-DE-ChristophNeural` – gleicher Text, exakt gleiche Byte-Länge, die ersten
-         ~4,7 kB identisch, Kurvenkorrelation 1,00. Es gab in `de-DE` also nur zwei echte
-         Stimmen; außerdem ist der Server-Standard (`audio.tts.voice=de-DE-KatjaNeural`)
-         weiblich. edge-tts selbst bietet für den deutschen Raum sechs Stimmen.
-       * Neu: Tanja / Christoph (de), Ingrid / Jonas (AT), Leni / Jan (CH) – je drei weiblich
-         und männlich, Labels zeigen Sprache. Alte gespeicherte Katja-/Conrad-Werte laufen
-         über `Config.LEGACY_VOICES` auf Tanja/Christoph, unbekannte bleiben Server-Standard.
-         Die Hörprobe sagt jetzt den Stimmnamen ("Christoph spricht."), und die Einstellungen
-         zeigen unten, welche Stimme gerade aktiv ist.
-       * Fehler im alten Spinner behoben: `setSelection()` nach dem Registrieren des Listeners
-         setzte die gespeicherte Stimme beim Öffnen still zurück; jetzt steht die Auswahl vor
-         dem Listener und ein `firstReport`-Guard ignoriert den ersten Callback.
-       * Live-Test abgesichert: `Test.liveTests()` erzeugt für jede Stimme Audio und prüft die
-         längste gemeinsame Byte-Folge (>200 Bytes gleich = dieselbe Stimme) – läuft durch,
-           ebenso die übrigen 130+ Live-Prüfungen.
+## Quick table
 
-## Restliche Punkte Stimme
+| Version | Fixed / added | Guarded by |
+|---|---|---|
+| 1.0 – 1.3 | Base: chat, images, compression, TTS, dictation, vision, quality | `Test` suite |
+| 1.4 | Image mode stops talking: voice button hidden in image mode, a running voice round ends on model switch, image replies are never read aloud | `Router.java`, `Test.routerTests()` |
+| 1.5 | Web search (off / auto / on) and voice selection | `Search.java` |
+| 1.6 | Web search reduced to off / on, and it really reads the pages (`bypass_embedding_and_retrieval=True` on the server) | live price-search check in `Test.liveTests()` |
+| 1.7 | Voices fixed: "male and female sound the same" – Katja/Conrad are aliases of Tanja/Christoph, so `de-DE` only has two real voices; now 3 female + 3 male (de / AT / CH) | byte-comparison test per voice |
+| 1.8 | Voice conversation listens again after the answer: one stage at a time in `VoiceFlow.java` instead of a "still running" flag | `Test.voiceFlowTests()` (21 checks) |
+| 1.8.1 | Public build: no LAN CA inside the APK (`OWUI_NO_CA=1`), different signing key than 1.0 – 1.8 (uninstall the old version first), APKs distributed as GitHub releases, documentation neutralised (example address only) | release notes |
 
-1. A/B-Hören: gleicher kurzer Text, Tanja / Ingrid / Leni (w) und Christoph / Jonas / Jan (m),
-   Dauer und Klang vergleichen, dann Tages- und Nachtstimme festlegen. Die App kann das inzwischen:
-   Stimme umstellen, Hörprobe nennt die Stimme.
-2. Sprechtempo: `EDGE_SPEED` (Standard 1.0) bzw. `rate` (z. B. `+10%`) – offen ist, ob
-   OpenWebUI den Parameter durchreicht (`audio.tts.openai.params` wäre der Ort dafuer),
-   bevor die App ihn selbst schickt.
-3. Auffälligkeit, gemessen am 17.11.2026: edge-tts listet für den deutschen Raum sechs Stimmen
-   (de-DE Tanja w / Christoph m, de-AT Ingrid w / Jonas m, de-CH Leni w / Jan m), aber die
-   Liste weist alle als weiblich aus – das Geschlecht in der Liste ist unzuverlässig, die
-   Stimmen selbst sind verschieden. `de-DE-KatjaNeural` und `de-DE-ConradNeural` sind keine
-   eigenen Stimmen, sondern Alias-Namen von Tanja und Christoph (identisches Audio).
-   Server-Standard ist weiterhin `de-DE-KatjaNeural` (= Tanja, weiblich).
+## Open voice items
 
-Nicht für 1.5: echter Realtime-Voice-Call (bewusst cloud-frei gelassen, noch nicht eingerichtet).
+1. A/B listening: same short text, Tanja / Ingrid / Leni (f) and Christoph / Jonas / Jan (m),
+   compare duration and sound, then decide the day voice and the night voice. The app can do this
+   by now: change the voice, the sample names it.
+2. Speaking rate: `EDGE_SPEED` (default 1.0) or `rate` (e.g. `+10%`) – open question whether Open
+   WebUI passes the parameter on (`audio.tts.openai.params` would be the place for it) before the
+   app sends it itself.
+3. Finding, as of 2026-11-17: edge-tts lists six voices for the German-speaking area (de-DE Tanja f
+   / Christoph m, de-AT Ingrid f / Jonas m, de-CH Leni f / Jan m), but the list marks all of them
+   as female – the gender in the list is unreliable, the voices themselves are different.
+   `de-DE-KatjaNeural` and `de-DE-ConradNeural` are not own voices but alias names of Tanja and
+   Christoph (identical audio). The server default is still `de-DE-KatjaNeural` (= Tanja, female).
 
-- 1.8  Sprach-Unterhaltung hoert nach der Antwort wieder zu (Stand 17.11.2026, gebaut,
-       getestet, verteilt als GitHub-Release owui-chat-1.8.apk):
-       * Symptom: die Antwort kam und wurde vorgelesen, danach reagierte die App nicht mehr
-         auf Stimme, obwohl der Unterhaltungs-Knopf noch grün (Modus an) war.
-       * Ursache: `startVoiceTurn()` begann mit `if (voiceRunning || transcribing) return;`.
-         `voiceRunning` wurde beim ersten Druck auf true gesetzt und erst beim Abbruch wieder
-         auf false - der Wiedereinstieg nach dem Vorlesen rief genau diese Methode auf, fand
-         true und kehrte sofort zurück. Es lief also keine Aufnahme mehr, während Bar
-         ("● Sprich weiter …") und Knopf weiter "an" zeigten. Mit ausgestellt Schleife
-         ("nur eine Runde") blieb derselbe Zustand dauerhaft stehen.
-       * Neu: `src/de/owui/chat/VoiceFlow.java` führt genau eine Stufe pro Augenblick
-         (aufnahme -> verstehe -> denke -> spreche -> Pause) und getrennt davon den Modus
-         (sessionOn). Der Modus ist damit nicht mehr an einen "laeuft noch"-Schalter gekoppelt;
-         die Pause nach dem Vorlesen ist ein eigener Uebergang und die naechste Aufnahme beginnt.
-         MainActivity hat keine chatSession-/voiceRunning-/voiceAnswerPending-Felder mehr.
-       * Regeln abgesichert in `Test.voiceFlowTests()`: 21 Prüfungen, darunter vier Runden
-         hintereinander, "Pause blockiert die neue Aufnahme nicht", "nur eine Runde",
-         "Tonfehler beendet", "Uebergang aus falscher Stufe wird ignoriert".
-       * Dazu: Knopfdruck je Stufe jetzt definiert (aufnahme beenden / Runde abbrechen /
-         Sprechen unterbrechen / zuhoeren beginnen); eine Hoerprobe oder "Vorlesen" einer
-         einzelnen Nachricht schneidet eine laufende Unterhaltung nicht mehr ab (war ein
-         zweiter Weg in denselben Haenge-Zustand); 400 ms Nachhall nach dem Vorlesen zaehlen
-         nicht als eigene Aussage; jede Stufenanderung steht in logcat unter "owui-voice"
-         (`adb logcat -s owui-voice`), damit so ein Fall auf dem Telefon nachvollziehbar ist.
-
-- 1.8.1  Oeffentliches Build, Verteilung umgestellt (Stand 17.11.2026, gebaut, getestet,
-       verteilt als GitHub-Release owui-chat-1.8.1.apk, versionCode 10):
-       * Keine LAN-CA mehr in der APK: gebaut mit `OWUI_NO_CA=1`, `assets/ca.crt` wird nicht
-         mitgeliefert. Jede Installation hat ihre eigene CA, die gehoert nicht in ein
-         oeffentliches Artefakt.
-       * Anderer Signierschluessel als 1.0 – 1.8 (`CN=Chat LAN, O=chat-lan, C=DE`, Schluessel
-         ausserhalb des Repositories). Deshalb Vorgängerversion vor der Installation
-         deinstallieren – ein Update ueber 1.8 wird von Android abgelehnt.
-       * Fertige APKs liegen jetzt als GitHub-Release statt unter `https://<server>:3443/dl/`.
-       * Doku neutralisiert: `Config.DEFAULT_URL` und die drei Vorschläge der Anmeldemaske
-         stehen auf einem Beispielwert, keine echten LAN-Adressen im Repository.
+Not planned for 1.5: a real realtime voice call (deliberately kept cloud-free, not set up).

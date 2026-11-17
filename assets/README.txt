@@ -1,9 +1,9 @@
-Hier liegt die CA, der die App zusätzlich zu den System-Zertifikaten vertraut.
+This is where the CA goes that the app trusts on top of the system certificates.
 
-  cp /pfad/zu/deiner-lan-ca.crt assets/ca.crt
+  cp /path/to/your-lan-ca.crt assets/ca.crt
 
-Der Build funktioniert auch ohne diese Datei: dann greift die App nur auf
-System-CAs zu (echte Zertifikate) oder auf "Beliebiges Zertifikat akzeptieren"
-in den Einstellungen - praktisch zum Ausprobieren, unschön im Ernstbetrieb.
+The build also works without this file: then the app only uses system CAs (real
+certificates) or "Accept any certificate" in the settings - fine for trying things
+out, not for production.
 
-Die Datei ist in .gitignore, weil jede LAN-Installation ihre eigene CA hat.
+The file is in .gitignore because every LAN installation has its own CA.
