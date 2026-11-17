@@ -101,3 +101,15 @@ Nicht für 1.5: echter Realtime-Voice-Call (bewusst cloud-frei gelassen, noch ni
          zweiter Weg in denselben Haenge-Zustand); 400 ms Nachhall nach dem Vorlesen zaehlen
          nicht als eigene Aussage; jede Stufenanderung steht in logcat unter "owui-voice"
          (`adb logcat -s owui-voice`), damit so ein Fall auf dem Telefon nachvollziehbar ist.
+
+- 1.8.1  Oeffentliches Build, Verteilung umgestellt (Stand 17.11.2026, gebaut, getestet,
+       verteilt als GitHub-Release owui-chat-1.8.1.apk, versionCode 10):
+       * Keine LAN-CA mehr in der APK: gebaut mit `OWUI_NO_CA=1`, `assets/ca.crt` wird nicht
+         mitgeliefert. Jede Installation hat ihre eigene CA, die gehoert nicht in ein
+         oeffentliches Artefakt.
+       * Anderer Signierschluessel als 1.0 – 1.8 (`CN=Chat LAN, O=chat-lan, C=DE`, Schluessel
+         ausserhalb des Repositories). Deshalb Vorgängerversion vor der Installation
+         deinstallieren – ein Update ueber 1.8 wird von Android abgelehnt.
+       * Fertige APKs liegen jetzt als GitHub-Release statt unter `https://<server>:3443/dl/`.
+       * Doku neutralisiert: `Config.DEFAULT_URL` und die drei Vorschläge der Anmeldemaske
+         stehen auf einem Beispielwert, keine echten LAN-Adressen im Repository.
