@@ -8,5 +8,12 @@ build/
 test/.secrets.json
 assets/ca.crt
 test/assets/ca.crt
+*.crt
+*.key
+*.csr
+*.keystore
+*.jks
+*.pass
+pub/
 __pycache__/
 *.log
