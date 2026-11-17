@@ -2,6 +2,19 @@
 
 Projekt: dieses Repository
 
+> **EN – short version of the history below** (the detailed log stays German; the app
+> documentation in English is [README.en.md](README.en.md)):
+>
+> | Version | Fixed / added | Guarded by |
+> |---|---|---|
+> | 1.0 – 1.3 | Base: chat, images, compression, TTS, dictation, vision, quality | `Test` suite |
+> | 1.4 | Image mode stops talking: voice button hidden in image mode, a running voice round ends on model switch, image replies are never read aloud | `Router.java`, `Test.routerTests()` |
+> | 1.5 | Web search (off / auto / on) and voice selection | `Search.java` |
+> | 1.6 | Web search reduced to off / on, and it really reads the pages (`bypass_embedding_and_retrieval=True` on the server) | live price-search check in `Test.liveTests()` |
+> | 1.7 | Voices fixed: "male and female sound the same" – Katja/Conrad are aliases of Tanja/Christoph, so `de-DE` only has two real voices; now 3 female + 3 male (de / AT / CH) | byte-comparison test per voice |
+> | 1.8 | Voice conversation listens again after the answer: one stage at a time in `VoiceFlow.java` instead of a "still running" flag | `Test.voiceFlowTests()` (21 checks) |
+> | 1.8.1 | Public build: no LAN CA inside the APK (`OWUI_NO_CA=1`), different signing key than 1.0 – 1.8 (uninstall the old version first), APKs distributed as GitHub releases, documentation neutralised (example address only) | release notes |
+
 ## Versionen (verteilt über GitHub-Releases)
 
 - 1.0 – 1.3  Basis: Chat, Bilder, Kompression, TTS, Diktat, Vision, Qualität

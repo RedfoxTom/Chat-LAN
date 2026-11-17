@@ -1,10 +1,18 @@
 # Chat LAN
 
+[Deutsch](README.md) · [English](README.en.md)
+
 Nativer Android-Client für ein **lokales** Open WebUI (oder direkt für jeden
 OpenAI-kompatiblen Modellserver) – ohne Cloud, ohne fremde Server, alles im eigenen Netz.
 
 Kein React/Capacitor, kein Gradle: eine kleine native Android-App in Java, gebaut mit
 `aapt2` + `javac` + `d8` + `apksigner`. APK ~160 kB, läuft ab Android 8 (API 26).
+
+**EN:** Native Android client for a **self-hosted** Open WebUI (or any OpenAI-compatible
+model server) – no cloud, no third-party servers, everything on your own network. Plain
+Java, built with `aapt2` + `javac` + `d8` + `apksigner`, no React/Capacitor and no Gradle.
+APK ~160 kB, Android 8 (API 26) and newer. Full English documentation:
+[README.en.md](README.en.md).
 
 ## Was die App kann
 
